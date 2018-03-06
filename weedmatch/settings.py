@@ -35,7 +35,8 @@ DEBUG = True
 
 URL = "http://127.0.0.1:8000"
 
-ALLOWED_HOSTS = ['localhost:8000', 'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.4:8080', '192.168.0.4']
+ALLOWED_HOSTS = ['localhost:8000','weedmatch.herokuapp.com', 
+'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.4:8080', '192.168.0.4']
 
 # Application definition
 
@@ -224,7 +225,7 @@ JET_THEMES = [
 ]
 
 #Cors Configurations
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOW_CREDENTIALS = False
 CORS_ALLOW_HEADERS = (
     'accept',
