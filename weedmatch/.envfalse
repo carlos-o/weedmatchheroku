@@ -1,0 +1,26 @@
+DEBUG=True
+DBUSER=yourdatauser
+DBNAME=databasename
+DBPASSWORD=databasepassword
+DBHOST=127.0.0.1
+DATABASE_PORT=5432
+EMAIL_TLS=True
+EMAIL_PORT_USE=587
+EMAIL_USER=email
+EMAIL_PASSWORD=email-password
+EMAIL_HOST=smtp.gmail.com
+URL=http://127.0.0.1:8000
+
+enviroment to run docker-compose up
+DEBUG=True
+DBUSER=postgres
+DBNAME=postgres
+DBPASSWORD=mysecretpassword
+DBHOST=db
+DATABASE_PORT=5432
+EMAIL_TLS=True
+EMAIL_PORT_USE=587
+EMAIL_USER=email
+EMAIL_PASSWORD=email-password
+EMAIL_HOST=smtp.gmail.com
+URL=http://127.0.0.1:8000
