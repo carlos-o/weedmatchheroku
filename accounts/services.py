@@ -2,8 +2,11 @@ from accounts import models as accounts_models
 from accounts import validations as accounts_validations
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
+from django.contrib.postgres.aggregates import ArrayAgg
 from datetime import datetime
+from weedmatch import settings
 import re
+import os
 
 
 class UserService:
@@ -66,7 +69,7 @@ class ProfileUser:
         user.save()
         return user
     
-    def changePassword(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+    def change_password(self, user: accounts_models.User, data: dict)-> accounts_models.User:
         if user is None or user.is_active is False:
             raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
         if not data.get('old_password'):
@@ -81,13 +84,108 @@ class ProfileUser:
         user.save()
         return user
     
-    def changeProfileImage(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+    def upload_images(self, user: accounts_models.User, data: dict)-> accounts_models.User:
         if user is None or user.is_active is False:
-            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}') 
         if not data.get('image'):
             raise ValueError('{"detail": "El campo imagen de perfil no puede estar vacio"}')
-        user.image = data.get('image')
+        if user.count_image < 6:
+            images_profile = accounts_models.ImageProfile.objects.create(
+                user_id=user.id,
+                image_profile=data.get('image')
+            )
+            user.count_increment()
+        else:
+            raise ValueError('{"detail": "no puedes subir mas de 6 imagenes en el profile"}')
+        return user
+    
+    def delete_images(self, user: accounts_models.User, id_image: int)-> accounts_models.User:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        try:
+            image = accounts_models.ImageProfile.objects.get(id=id_image,user_id=user.id) 
+        except accounts_models.ImageProfile.DoesNotExist:
+            raise ValueError('{"detail": "no existe la imagen en tu profile"}')
+        if user.image == str(image.image_profile):
+            user.image = ""
+            user.save()
+        os.remove(os.path.join(settings.MEDIA_ROOT,str(image.image_profile.name)))
+        image.delete()
+        user.count_delete()
+        return user
+
+    def assing_image_profile(self, user: accounts_models.User, id_image: int)-> accounts_models.User:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        try:
+            image = accounts_models.ImageProfile.objects.get(id=id_image,user_id=user.id) 
+        except accounts_models.ImageProfile.DoesNotExist:
+            raise ValueError('{"detail": "no existe la imagen en tu profile"}')
+        user.image = str(image.image_profile)
         user.save()
+        return user
+
+    def public_profile(self, user: accounts_models.User, pk: int)-> accounts_models.User:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        try:
+            public = accounts_models.User.objects.get(id=pk)
+        except accounts_models.User.DoesNotExist:
+            raise ValueError('{"detail": "el usuario no se encuentra registrado en el sistema"}')
+        return public
+
+
+class UploadImagePublicProfileService:
+
+    def list(self, user: accounts_models.User)->accounts_models.Image:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        images = accounts_models.Image.objects.filter(user_id=user.id)
+        return images
+
+    def create(self, user:accounts_models.User, data:dict)->accounts_models.Image:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        if not data.get('image'):
+            raise ValueError('{"detail": "El campo imagen de perfil no puede estar vacio"}')
+        if not data.get('comment'):
+            data['comment'] = ""
+        try:
+            image = accounts_models.Image.objects.create(
+                user_id=user.id,
+                image=data.get('image'),
+                state=data.get('comment'),
+                latitud=user.latitud,
+                longitud=user.longitud
+            )
+        except Exception as e:
+            raise ValueError('{"detail": "ha ocurrido un error al guardar el usuario"}')
+        return image
+
+    def update(self, user: accounts_models.User, data: dict, id_image: int)->accounts_models.Image:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        try:
+            imagen = accounts_models.Image.objects.get(id=id_image, user_id=user.id)
+        except accounts_models.Image.DoesNotExist:
+            raise ValueError('{"detail": "La imagen no existe en tu perfil publico"}')
+        if data.get('like') == "True" or data.get('like') == "true":
+            imagen.increment_like()
+        elif data.get('like') == "False" or data.get('like') == "false":
+            imagen.decrement_like()
+        else:
+            raise ValueError('{"detail":"No se puede anexar un nuevo me gusta a su imagen publica"}')
+        return imagen
+
+    def delete(self, user:accounts_models.User, id_image: int)-> accounts_models.User:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
+        try:
+            imagen = accounts_models.Image.objects.get(id=id_image, user_id=user.id)
+        except accounts_models.Image.DoesNotExist:
+            raise ValueError('{"detail": "La imagen no existe en tu perfil publico o la has eliminado"}')
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(imagen.image.name)))
+        imagen.delete()
         return user
 
 
@@ -95,7 +193,7 @@ class RegisterUserService:
 
     def create(self, data: dict) -> accounts_models.User:
         date = data['age'][:10]
-        if not date:
+        if not date or not data.get('age'):
             raise ValueError('{"age": "El campo de fecha no puede estar vacio"}')
         match = re.match(r'([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))', date)
         if not match:
@@ -132,7 +230,7 @@ class RegisterUserService:
 
 class RecoverPasswordService:
 
-    def checkEmail(self, data: dict) -> accounts_models.User:
+    def check_email(self, data: dict) -> accounts_models.User:
         if not data.get('email'):
             raise ValueError('{"detail": "el campo correo no puede estar vacio"}')
         try:
@@ -141,7 +239,7 @@ class RecoverPasswordService:
             raise ValueError('{"detail": "el correo no esta registrado en el sistema"}')
         return user
 
-    def checkCode(self, data: dict) -> accounts_models.User:
+    def check_code(self, data: dict) -> accounts_models.User:
         if not data.get('code'):
             raise ValueError('{"detail": "El campo codigo no puede estar vacio"}')
         if not data.get('password'):
@@ -154,3 +252,15 @@ class RecoverPasswordService:
         user.recovery = ''
         user.save()
         return user
+
+
+class PublicFeedService:
+
+    def list(self, user: accounts_models.User):
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
+        users = accounts_models.User.objects.all().exclude(username=user.username).exclude(is_superuser=True)
+        ids = users.aggregate(users_id=ArrayAgg('id'))
+        images = accounts_models.Image.objects.filter(user_id__in=ids.get('users_id'))
+        print(images)
+        return images

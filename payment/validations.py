@@ -1,5 +1,5 @@
 from cerberus import Validator
-from payment.models import TYPE_CARD
+from payment.models import CreditCard
 
 
 class CreditCardValidate:
@@ -10,7 +10,8 @@ class CreditCardValidate:
         'user_id': {'type': 'string', 'empty': False},
         'first_name': {'type': 'string', 'required': True, 'empty': False, 'minlength': 3, 'maxlength': 50},
         'last_name': {'type': 'string', 'required': True, 'empty': False, 'minlength': 3, 'maxlength': 50},
-        'type_card': {'type': 'string', 'required': True, 'empty': False, 'maxlength': 20,'allowed': [i[0] for i in TYPE_CARD]},
+        'type_card': {'type': 'string', 'required': True, 'empty': False, 'maxlength': 20,
+                      'allowed': [i[0] for i in CreditCard().TYPE_CARD]},
         'number_card': {'type': 'string', 'required': True, 'empty': False,
                         'minlength': 15, 'maxlength': 20},
         'cod_security': {'type': 'string', 'required': False, 'empty': True, 'regex': '^[0-9]+$',

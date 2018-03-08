@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import detail_route, list_route
+from rest_framework.pagination import PageNumberPagination
 from accounts import models as accounts_models
 from accounts import serializers as accounts_serializers
 from accounts import services as accounts_services
@@ -86,12 +87,12 @@ class RequestRecoverPassword(APIView):
     def post(self, request):
         recover = accounts_services.RecoverPasswordService()
         try:
-            user = recover.checkEmail(request.data)
+            user = recover.check_email(request.data)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         if notifications_views.recover_password(user, request):
             expire = datetime.now() + timedelta(minutes=10)
-            accounts_tasks.disableCodeRecoveryPassword.apply_async(args=[user.id], eta=expire)
+            accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
             return Response({'detail': 'el correo se ha enviado con exito'}, status=status.HTTP_200_OK)
         return Response({'detail': 'Problemas del servidor no se ha podido realizar la peticion'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -105,7 +106,7 @@ class RecoverPassword(APIView):
     def post(self, request):
         recover = accounts_services.RecoverPasswordService()
         try:
-            user = recover.checkCode(request.data)
+            user = recover.check_code(request.data)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         return Response({'detail': 'La contraseña se ha cambiado con exito'}, status=status.HTTP_200_OK)
@@ -144,24 +145,52 @@ class ProfileViewSet(viewsets.ModelViewSet):
         serializer['detail'] = 'Tu información personal ha sido editada con exito'
         return Response(serializer, status=status.HTTP_200_OK)
     
-    @detail_route(methods=['put'], permission_classes=(permissions.IsAuthenticated,))
-    def uploadImage(self, request, pk=None):
+    @detail_route(methods=['put'], url_path='assign-image/(?P<id_image>[0-9]+)',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def assign_image(self, request, pk=None, id_image=None):
         instance = request.user
         service = accounts_services.ProfileUser()
         try:
-            profile = service.changeProfileImage(instance, request.data)
+            profile = service.assing_image_profile(instance, id_image)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(profile, many=False).data
         serializer['detail'] = 'Tu imagen de perfil ha sido cambiada exitosamente'
         return Response(serializer, status=status.HTTP_200_OK)
 
-    @detail_route(methods=['put'], permission_classes=(permissions.IsAuthenticated,))
-    def changePassword(self, request, pk=None):
+    @detail_route(methods=['post'], url_path='upload-image',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def upload_image(self, request, pk=None):
         instance = request.user
         service = accounts_services.ProfileUser()
         try:
-            profile = service.changePassword(instance, request.data)
+            user = service.upload_images(instance, request.data)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user, many=False).data
+        serializer['detail'] = 'Has subido una imagen a tu perfil exitosamente'
+        return Response(serializer, status=status.HTTP_201_CREATED)
+    
+    @detail_route(methods=['delete'], url_path='delete-image/(?P<id_image>[0-9]+)',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def delete_image(self, request, pk=None, id_image=None):
+        instance = request.user
+        service = accounts_services.ProfileUser()
+        try:
+            user = service.delete_images(instance, id_image)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user, many=False).data
+        serializer['detail'] = 'Se ha eliminado una imagen de tu perfil exitosamente'
+        return Response(serializer, status=status.HTTP_200_OK)
+
+    @detail_route(methods=['put'], url_path='change-password',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def change_password(self, request, pk=None):
+        instance = request.user
+        service = accounts_services.ProfileUser()
+        try:
+            profile = service.change_password(instance, request.data)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         profile.auth_token.delete()
@@ -171,3 +200,74 @@ class ProfileViewSet(viewsets.ModelViewSet):
                          'id': profile.id,
                          'username': profile.username, 
                          'last_login': profile.last_login}, status=status.HTTP_200_OK)
+
+
+class PublicProfileView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, pk):
+        service = accounts_services.ProfileUser()
+        try:
+            user = service.public_profile(request.user, pk)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = accounts_serializers.PublicProfileUserSerializers(user, many=False).data
+        return Response(serializer, status=status.HTTP_200_OK)
+
+
+class PublicProfileImagesViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = accounts_models.Image.objects.all()
+
+    def list(self, request):
+        service = accounts_services.UploadImagePublicProfileService()
+        try:
+            image = service.list(request.user)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        return Response(accounts_serializers.ImagePublicSerializer(image, many=True).data,
+                        status=status.HTTP_200_OK)
+
+    def create(self, request):
+        service = accounts_services.UploadImagePublicProfileService()
+        try:
+            image = service.create(request.user, request.data)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = accounts_serializers.ImagePublicSerializer(image, many=False).data
+        serializer['detail'] = "La imagen se ha subido a tu profile publico con exito"
+        return Response(serializer, status=status.HTTP_201_CREATED)
+
+    def update(self, request, pk=None):
+        service = accounts_services.UploadImagePublicProfileService()
+        try:
+            image = service.update(request.user, request.data, pk)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = accounts_serializers.ImagePublicSerializer(image, many=False).data
+        serializer['detail'] = "se ha editado la imagen con exito"
+        return Response(serializer, status=status.HTTP_200_OK)
+
+    def destroy(self, request, pk=None):
+        service = accounts_services.UploadImagePublicProfileService()
+        try:
+            image = service.delete(request.user, pk)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "La imagen a sido borrada con exito de su perfil publico"},
+                        status=status.HTTP_200_OK)
+
+
+class PublicFeedView(ListAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        service = accounts_services.PublicFeedService()
+        try:
+            users = service.list(request.user)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        paginator = PageNumberPagination()
+        context = paginator.paginate_queryset(users, request)
+        serializer = accounts_serializers.PublicFeedSerializers(context, many=True)
+        return paginator.get_paginated_response(serializer.data)

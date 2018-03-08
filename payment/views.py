@@ -20,18 +20,6 @@ from datetime import datetime
 from datetime import timedelta
 from weedmatch import settings
 
-#status-code-response
-STATUS = {
-    "200": status.HTTP_200_OK,
-    "201": status.HTTP_201_CREATED,
-    "202": status.HTTP_202_ACCEPTED,
-    "204": status.HTTP_204_NO_CONTENT,
-    "400": status.HTTP_400_BAD_REQUEST,
-    "401": status.HTTP_401_UNAUTHORIZED,
-    "404": status.HTTP_404_NOT_FOUND,
-    "500": status.HTTP_500_INTERNAL_SERVER_ERROR
-}
-
 
 class CreditCardViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -43,20 +31,20 @@ class CreditCardViewSet(viewsets.ModelViewSet):
         try:
             card = service.list(request.user)
         except Exception as e:
-            return Response(json.loads(str(e)), status=STATUS['400'])
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(card, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         service = payment_services.CreditCardService()
         try:
             card = service.create(request.data, request.user)
         except Exception as e:
-            return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=STATUS['400'])
+            return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(card, many=False).data
         serializer['detail'] = 'La tarjeta de credito se ha agregado a tu cuenta con exito'
-        return Response(serializer, status=STATUS['201'])
+        return Response(serializer, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -65,10 +53,10 @@ class CreditCardViewSet(viewsets.ModelViewSet):
         try:
             card = service.update(instance, request.data, request.user)
         except Exception as e:
-            return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=STATUS['400'])
+            return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(card, many=False).data
         serializer['detail'] = 'La información de la tarjeta de credito se ha editado con exito'
-        return Response(serializer, status=STATUS['200'])
+        return Response(serializer, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -76,5 +64,5 @@ class CreditCardViewSet(viewsets.ModelViewSet):
         try:
             card = service.delete(instance, request.user)
         except Exception as e:
-            return Response(json.loads(str(e)), status=STATUS['400'])
+            return Response(json.loads(str(e)), status=status)
         return Response({"detail": "la tarjeta de credito ha sido eliminada de tu cuenta con exito"}, status=STATUS['200'])

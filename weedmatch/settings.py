@@ -184,7 +184,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 20,
     'PAGINATE_BY_PARAM': 'page_size',
     'DATETIME_FORMAT': "%d-%m-%Y %H:%M:%S",
 }
