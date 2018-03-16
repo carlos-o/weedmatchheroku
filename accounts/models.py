@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import now
 
 NORMAL = 'normal'
 ADMIN = 'admin'
@@ -34,17 +35,30 @@ class City(models.Model):
 
 
 class User(AbstractUser):
+    SEX_MALE = "Hombre"
+    SEX_FEMALE = "Mujer"
+    SEX_OTHER = "Other"
+    TYPE_SEX = (
+        (SEX_MALE, _('Hombre')),
+        (SEX_FEMALE, _('Mujer')),
+        (SEX_OTHER, _("Other"))
+    )
+
     country = models.ForeignKey('Country', related_name='country_user', on_delete=models.CASCADE, null=True, blank=True)
     typeUser = models.CharField(_('TypeUser'), choices=TYPE_USER, max_length=10, default=NORMAL,
                                 blank=False, null=False)
     recovery = models.CharField(_('Recovery'), max_length=40, blank=True)
     image = models.CharField(_('Photo'), max_length=255, blank=True, null=True)
     count_image = models.IntegerField(_('Count'), default=0, blank=True, null=True)
-    direction = models.CharField(_('Direction'), max_length=255, blank=True)
+    direction = models.CharField(_('Direction'), max_length=255, blank=True, null=True)
     age = models.DateField(_('Age'), null=True, blank=True)
+    sex = models.CharField(_('Type_sex'), max_length=10, choices=TYPE_SEX, default=SEX_OTHER, blank=True, null=True)
     latitud = models.DecimalField(_('Latitud'), max_digits=10, decimal_places=6, blank=True, null=True)
     longitud = models.DecimalField(_('Longitud'), max_digits=10, decimal_places=6, blank=True, null=True)
     description = models.CharField(_('Description'), max_length=255, blank=True, null=True)
+    match_sex = models.CharField(_('Match_sex'), max_length=10, choices=TYPE_SEX, default=SEX_OTHER, blank=True, null=True)
+    facebook_id = models.CharField(max_length=140, blank=True, null=True)
+    facebook_access_token = models.TextField(blank=True, null=True)
     
     def __str__(self):
         return self.username
@@ -55,6 +69,10 @@ class User(AbstractUser):
     
     def count_delete(self):
         self.count_image -= 1
+        self.save()
+    
+    def assign_image_profile(self, image_name):
+        self.image = image_name
         self.save()
     
 
@@ -78,7 +96,7 @@ class Image(models.Model):
     state = models.CharField(_('State_image'), max_length=255, blank=False, null=False)
     latitud = models.DecimalField(_('Latitud_image'), max_digits=10, decimal_places=6, blank=True, null=True)
     longitud = models.DecimalField(_('Longitud_image'), max_digits=10, decimal_places=6, blank=True, null=True)
-    created = models.DateTimeField(auto_now_add=True, editable=False)
+    created = models.DateTimeField(default=now, editable=False)
     modified = models.DateTimeField(auto_now=True, editable=False)
 
     class Meta:
@@ -98,3 +116,40 @@ class Image(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class PublicFeed(models.Model):
+    user = models.ForeignKey('User', related_name='user_image_feed', on_delete=models.CASCADE, null=True, blank=True)
+    id_image = models.IntegerField(_('Image_id'), blank=True, null=True)
+    image = models.CharField(_('Image'), max_length=255, blank=True, null=True)
+    like = models.IntegerField(_('weedy-like'), default=0, null=False, blank=False)
+    state = models.CharField(_('State_image'), max_length=255, blank=True, null=True)
+    latitud = models.DecimalField(_('Latitud_image'), max_digits=10, decimal_places=6, blank=True, null=True)
+    longitud = models.DecimalField(_('Longitud_image'), max_digits=10, decimal_places=6, blank=True, null=True)
+    date_creation = models.DateTimeField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+    modified = models.DateTimeField(auto_now=True, editable=False)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return self.user.username
+
+    def get_user_id(self):
+        return self.user.id
+
+    def get_user_username(self):
+        return self.user.username
+
+    def get_user_first_name(self):
+        return self.user.first_name
+
+class TermsCondition(models.Model):
+    title = models.CharField(_('Title'), max_length=50, blank=False, null=False)
+    description = models.TextField(_('Description'), blank=False, null=False)
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+    modified = models.DateTimeField(auto_now=True, editable=False)
+
+    def __str__(self):
+        return self.title

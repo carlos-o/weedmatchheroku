@@ -35,6 +35,7 @@ DEBUG = True
 
 URL = "http://127.0.0.1:8000"
 
+GOOGLE_MAPS_KEY = 'AIzaSyBXRURCypqvoeRmYErkYGiJ5qFSYjAoJHo'
 ALLOWED_HOSTS = ['localhost:8000','weedmatch.herokuapp.com', 
 'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.4:8080', '192.168.0.4']
 
@@ -172,6 +173,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 AUTH_USER_MODEL = "accounts.User"
 
+#radio-earth
+RADIO_EARTH = 6372.795477598
 # Media files (images saved in server)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
