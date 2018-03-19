@@ -9,7 +9,7 @@ import googlemaps
 import re
 import os
 import math
-import datetime
+import datetime as datime_module
 
 
 class UserService:
@@ -357,7 +357,7 @@ class PublicFeedService:
         elif len(date_string) >= 14:
             return date_string[:-13] + " days"
             if int(date_string[:-13]) > 7:
-                date = date_now - datetime.timedelta(days=int(date_string[:-13]))
+                date = date_now - datetime_module.timedelta(days=int(date_string[:-13]))
             if int(date_now.strftime("%Y")) > int(date.strftime("%Y")):
                 return date.strftime("%d the %B the %Y")
             else:
