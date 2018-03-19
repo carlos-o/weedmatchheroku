@@ -23,16 +23,6 @@ class ImageProfileAdmin(admin.ModelAdmin):
     search_fields = ('user',)
     list_filter = ('created',)
 
-class TermConditionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'description', 'created')
-    search_fields = ('title',)
-    list_filter = ('created',)
-
-class PublicFeedAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'id_image','created')
-    search_fields = ('user',)
-    list_filter = ('created',)
-
 
 class TermConditionAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'description', 'created')
