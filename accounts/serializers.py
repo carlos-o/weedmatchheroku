@@ -57,6 +57,7 @@ class ProfileUserSerializers(serpy.Serializer):
     description = serpy.MethodField()
     image = serpy.MethodField()
     profile_images = serpy.MethodField()
+    images_upload = serpy.MethodField()
     country = serpy.MethodField()
     credit_card = serpy.MethodField()
     age = serpy.MethodField()
