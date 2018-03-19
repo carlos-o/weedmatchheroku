@@ -40,7 +40,7 @@ class ProfileUserValidate:
     '''
 
     schema = {
-        'username': {'type': 'string', 'required': True, 'empty': False, 'minlength': 6, 'maxlength': 12},
+        'username': {'type': 'string', 'required': False, 'empty': True, 'minlength': 6, 'maxlength': 12},
         'first_name': {'type': 'string', 'required': True, 'empty': False, 'minlength': 3, 'maxlength': 30},
         'last_name': {'type': 'string', 'required': False, 'empty': True, 'minlength': 3, 'maxlength': 30},
         'direction': {'type': 'string', 'required': True, 'empty': False, 'maxlength': 255},
@@ -48,7 +48,7 @@ class ProfileUserValidate:
         'description': {'type': 'string', 'required': False, 'empty': True},
         'sex': {'type': 'string', 'required': True, 'empty': False},
         "match_sex": {'type': 'string', 'required': True, 'empty': False,
-                    'allowed': [i[0] for i in accounts_models.User.TYPE_SEX]},
+                      'allowed': [i[0] for i in accounts_models.User.TYPE_SEX]},
     }
 
     def __init__(self, data):

@@ -145,6 +145,7 @@ class PublicFeed(models.Model):
     def get_user_first_name(self):
         return self.user.first_name
 
+
 class TermsCondition(models.Model):
     title = models.CharField(_('Title'), max_length=50, blank=False, null=False)
     description = models.TextField(_('Description'), blank=False, null=False)

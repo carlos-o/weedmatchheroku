@@ -9,7 +9,9 @@ import googlemaps
 import re
 import os
 import math
-import datetime as datime_module
+import requests
+import json
+import datetime as datetime_module
 
 
 class UserService:
@@ -20,7 +22,8 @@ class UserService:
         if not data.get('password'):
             raise ValueError('{"detail": "La contraseña no puede estar vacia"}')
         try:
-            user = accounts_models.User.objects.get(Q(username__iexact=data.get('username')) | Q(email__iexact=data.get('username')))
+            user = accounts_models.User.objects.get(Q(username__iexact=data.get('username')) |
+                                                    Q(email__iexact=data.get('username')))
         except accounts_models.User.DoesNotExist:
             raise ValueError('{"detail": "El usuario no existe en el sistema"}')
         if not user.is_active:
@@ -30,7 +33,69 @@ class UserService:
         return user
 
     def login_facebook(self, data: dict)->accounts_models.User:
-        return True
+        if not data.get('access_token'):
+            raise ValueError('{"detail": "El campo access_token no puede estar vacio"}')
+        if not data.get('latitud'):
+            raise ValueError('{"detail": "El campo latitud no puede estar vacio"}')
+        if not data.get('longitud'):
+            raise ValueError('{"detail": "El campo longitud no puede estar vacio"}')
+        get_code_url = 'https://graph.facebook.com/oauth/client_code'
+        access_token_url = 'https://graph.facebook.com/v2.9/oauth/access_token'
+        graph_api_url = 'https://graph.facebook.com/v2.12/me?fields=id,name,email,birthday,picture.width(200).height(200)'
+
+        params = {
+            'client_id': settings.FACEBOOK_CLIEND_ID,
+            'redirect_uri': "192.168.0.21",
+            'client_secret': settings.FACEBOOK_SECRET,
+            'access_token': data.get('access_token')
+        }
+
+        r = requests.get(graph_api_url, params=params)
+        if r.status_code == 400:
+            raise ValueError('{"detail":"El token de acceso no pertenece a ese usuario"}')
+        profile = json.loads(r.text)
+        username = profile.get('email').split("@")[0]
+        user_register = accounts_models.User.objects.filter(facebook_id=profile.get('id'))
+        if user_register.exists():
+            return user_register[0]
+        if accounts_models.User.objects.filter(username=username).exists():
+            raise ValueError('{"detail":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
+        #google map api
+        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
+        try:
+            reverse_geocode_result = gmaps.reverse_geocode((data.get('latitud'), data.get('longitud')))
+        except googlemaps.exceptions.ApiError:
+            raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
+        direction = reverse_geocode_result[1].get('formatted_address')
+        count = len(reverse_geocode_result) - 1
+        country_map = reverse_geocode_result[count].get('formatted_address')
+        try:
+            country = accounts_models.Country.objects.filter(name=country_map)
+        except accounts_models.Country.DoesNotExist:
+            raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
+        image = profile.get('picture').get('data').get('url')
+        age = profile.get('birthday')
+        if not age:
+            age = datetime.now().strftime('%Y-%m-%d')
+        else:
+            age = datetime.strptime(age, "%m/%d/%Y").strftime("%Y-%m-%d")
+        if not image:
+            image = ""
+        user = accounts_models.User.objects.create(
+            username=username,
+            first_name=profile.get('name'),
+            email=profile.get('email'),
+            latitud=data.get('latitud'),
+            longitud=data.get('longitud'),
+            country_id=country[0].id,
+            image=image,
+            age=age,
+            direction=direction,
+            sex=accounts_models.User.SEX_OTHER,
+            facebook_id=profile.get('id'),
+            facebook_access_token=data.get('access_token')
+        )
+        return user
 
     def login_instagram(self, data: dict)->accounts_models.User:
         return True
@@ -300,12 +365,16 @@ class PublicFeedService:
     def list(self, user: accounts_models.User):
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
+        print("user",user.username)
         if user.match_sex == accounts_models.User.SEX_OTHER:
             users = accounts_models.User.objects.all().exclude(username=user.username).exclude(is_superuser=True)
         if user.match_sex == accounts_models.User.SEX_MALE:
-            users = accounts_models.User.objects.filter(sex=user.match_sex).exclude(username=user.username).exclude(is_superuser=True)
+            users = accounts_models.User.objects.filter(sex=user.match_sex).exclude(username=user.username)\
+                .exclude(is_superuser=True)
         if user.match_sex == accounts_models.User.SEX_FEMALE:
-            users = accounts_models.User.objects.filter(sex=user.match_sex).exclude(username=user.username).exclude(is_superuser=True)
+            users = accounts_models.User.objects.filter(sex=user.match_sex).exclude(username=user.username)\
+                .exclude(is_superuser=True)
+        print(users)
         ids = users.aggregate(users_id=ArrayAgg('id'))
         public_feed = accounts_models.PublicFeed.objects.filter(user_id__in=ids.get('users_id'))
         return public_feed
@@ -368,7 +437,7 @@ class PublicFeedService:
         list_accept = []
         for data in datas:
             distance, str_distance = self.distances(float(data.get('latitud')), float(data.get('longitud')),
-                                      float(user.latitud), float(user.longitud))
+                                                    float(user.latitud), float(user.longitud))
             if distance == 999:
                 data['distance'] = str_distance
                 data.pop('latitud')

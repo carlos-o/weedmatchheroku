@@ -39,7 +39,8 @@ class LoginView(APIView):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login})
+        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login},
+                        status=status.HTTP_200_OK)
 
 
 class LoginFacebookView(APIView):
@@ -48,7 +49,14 @@ class LoginFacebookView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        return Response({})
+        service = accounts_services.UserService()
+        try:
+            user = service.login_facebook(request.data)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login},
+                        status=status.HTTP_200_OK)
 
 
 class LoginInstagramView(APIView):
@@ -103,7 +111,8 @@ class RegisterView(APIView):
             data = register.create(request.data) 
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "la creacion de tu cuenta se ha realizado con exito"}, status=status.HTTP_201_CREATED)
+        return Response({"detail": "la creacion de tu cuenta se ha realizado con exito"},
+                        status=status.HTTP_201_CREATED)
 
 
 class RequestRecoverPassword(APIView):
@@ -255,7 +264,7 @@ class PublicProfileView(APIView):
             distance = service.distance_user(request.user, user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
-        serializer["distance"]=distance 
+        serializer["distance"] = distance
         return Response(serializer, status=status.HTTP_200_OK)
 
 

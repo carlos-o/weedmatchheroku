@@ -7,6 +7,7 @@ from accounts import services as accounts_services
 from django.utils import timezone
 import pytz
 import datetime
+import re
 import math
 
 
@@ -14,6 +15,7 @@ class CountrySerializers(serpy.Serializer):
     id = serpy.Field()
     name = serpy.Field()
     code = serpy. Field()
+
 
 class TermsConditionsSerializers(serpy.Serializer):
     id = serpy.Field()
@@ -53,7 +55,7 @@ class ProfileUserSerializers(serpy.Serializer):
     username = serpy.Field() 
     first_name = serpy.Field()
     email = serpy.Field()
-    direction = serpy.Field()
+    direction = serpy.MethodField()
     description = serpy.MethodField()
     image = serpy.MethodField()
     profile_images = serpy.MethodField()
@@ -66,6 +68,11 @@ class ProfileUserSerializers(serpy.Serializer):
     def get_id_user(self, obj):
         return obj.id
 
+    def get_direction(self, obj):
+        if not obj.direction:
+            return ""
+        return obj.direction
+
     def get_country(self, obj):
         if not obj.country:
             return ""
@@ -74,6 +81,8 @@ class ProfileUserSerializers(serpy.Serializer):
     def get_image(self, obj):
         if not obj.image:
             return ""
+        if re.search("https", obj.image):
+            return obj.image
         return settings.URL+'/media/'+obj.image
     
     def get_description(self, obj):
@@ -118,6 +127,8 @@ class PublicProfileUserSerializers(serpy.Serializer):
     def get_image(self, obj):
         if not obj.image:
             return ""
+        if re.search("https", obj.image):
+            return obj.image
         return settings.URL+'/media/'+obj.image
 
     def get_country(self, obj):
