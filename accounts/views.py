@@ -42,6 +42,24 @@ class LoginView(APIView):
         return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login})
 
 
+class LoginFacebookView(APIView):
+    """
+    """
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        return Response({})
+
+
+class LoginInstagramView(APIView):
+    """
+    """
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        return Response({})
+
+
 class LogoutView(APIView):
     """
     """
@@ -63,6 +81,15 @@ class CountryView(APIView):
         country = accounts_models.Country.objects.all()
         serializer = accounts_serializers.CountrySerializers(country, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TermsConditionsView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        terms = accounts_models.TermsCondition.objects.all().first()
+        serializer = accounts_serializers.TermsConditionsSerializers(terms, many=False).data
+        return Response(serializer, status=status.HTTP_200_OK)
 
 
 class RegisterView(APIView):
@@ -148,7 +175,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['put'], url_path='assign-image/(?P<id_image>[0-9]+)',
                   permission_classes=(permissions.IsAuthenticated,))
     def assign_image(self, request, pk=None, id_image=None):
-        instance = request.user
+        instance = self.get_object()
         service = accounts_services.ProfileUser()
         try:
             profile = service.assing_image_profile(instance, id_image)
@@ -156,6 +183,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(profile, many=False).data
         serializer['detail'] = 'Tu imagen de perfil ha sido cambiada exitosamente'
+        return Response(serializer, status=status.HTTP_200_OK)
+    
+    @detail_route(methods=['get'], url_path='assign-image',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def get_image_profile(self, request, pk=None, id_image=None):
+        instance = self.get_object()
+        service = accounts_services.ProfileUser()
+        try:
+            images_profile = service.list_image_profile(instance)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer = accounts_serializers.ImageSerializer(images_profile, many=True).data
         return Response(serializer, status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'], url_path='upload-image',
@@ -206,12 +245,17 @@ class PublicProfileView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, pk):
-        service = accounts_services.ProfileUser()
+        service = accounts_services.PublicFeedService()
         try:
             user = service.public_profile(request.user, pk)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = accounts_serializers.PublicProfileUserSerializers(user, many=False).data
+        try:
+            distance = service.distance_user(request.user, user)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        serializer["distance"]=distance 
         return Response(serializer, status=status.HTTP_200_OK)
 
 
@@ -225,8 +269,10 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
             image = service.list(request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
-        return Response(accounts_serializers.ImagePublicSerializer(image, many=True).data,
-                        status=status.HTTP_200_OK)
+        paginator = PageNumberPagination()
+        context = paginator.paginate_queryset(image, request)
+        serializer = accounts_serializers.ImagePublicSerializer(context, many=True).data
+        return paginator.get_paginated_response(serializer)
 
     def create(self, request):
         service = accounts_services.UploadImagePublicProfileService()
@@ -238,10 +284,12 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
         serializer['detail'] = "La imagen se ha subido a tu profile publico con exito"
         return Response(serializer, status=status.HTTP_201_CREATED)
 
-    def update(self, request, pk=None):
+    @detail_route(methods=['put'], url_path='like/(?P<id_user>[0-9]+)',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def update_image(self, request, pk=None, id_user=None):
         service = accounts_services.UploadImagePublicProfileService()
         try:
-            image = service.update(request.user, request.data, pk)
+            image = service.update(request.user, request.data, pk, id_user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = accounts_serializers.ImagePublicSerializer(image, many=False).data
@@ -258,16 +306,20 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
                         status=status.HTTP_200_OK)
 
 
-class PublicFeedView(ListAPIView):
+class PublicFeedView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
         service = accounts_services.PublicFeedService()
         try:
-            users = service.list(request.user)
+            public_feed = service.list(request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         paginator = PageNumberPagination()
-        context = paginator.paginate_queryset(users, request)
-        serializer = accounts_serializers.PublicFeedSerializers(context, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        context = paginator.paginate_queryset(public_feed, request)
+        serializer_data = accounts_serializers.PublicFeedSerializers(context, many=True).data
+        try:
+            serializer = service.distance_feed(request.user, serializer_data)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        return paginator.get_paginated_response(serializer)

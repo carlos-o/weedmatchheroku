@@ -65,4 +65,4 @@ class CreditCardViewSet(viewsets.ModelViewSet):
             card = service.delete(instance, request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status)
-        return Response({"detail": "la tarjeta de credito ha sido eliminada de tu cuenta con exito"}, status=STATUS['200'])
+        return Response({"detail": "la tarjeta de credito ha sido eliminada de tu cuenta con exito"}, status=status.HTTP_200_OK)

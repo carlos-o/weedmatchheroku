@@ -14,6 +14,7 @@ django-filter==1.1.0
 django-jet==1.0.7
 djangorestframework==3.7.7
 gunicorn==19.7.1
+googlemaps==2.5.1
 idna==2.6
 kombu==3.0.37
 Markdown==2.6.11

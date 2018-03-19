@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import dj_database_url
+from django.utils.translation import ugettext_lazy as _
 #import environ
 
 #env = environ.Env() # set default values and casting
@@ -32,7 +33,7 @@ SECRET_KEY = '8we-bjot6c7e6r&_)=%%*2pg8e+eiuy647*ld4h3q-qtgkzsin'
 DEBUG = True
 #else:
 #    DEBUG = False
-
+GOOGLE_MAPS_KEY = 'AIzaSyBXRURCypqvoeRmYErkYGiJ5qFSYjAoJHo'
 URL = "http://127.0.0.1:8000"
 
 ALLOWED_HOSTS = ['localhost:8000','weedmatch.herokuapp.com', 
@@ -148,8 +149,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
+LANGUAGES = (
+ ('en', _('English')),
+ ('es', _('Spanish')),
+)
 
 LANGUAGE_CODE = 'es'
+
+TIME_ZONE = 'America/Santiago'
 
 TIME_ZONE = 'UTC'
 
@@ -172,6 +179,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 AUTH_USER_MODEL = "accounts.User"
 
+#radio-earth
+RADIO_EARTH = 6372.795477598
 # Media files (images saved in server)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

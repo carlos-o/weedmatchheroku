@@ -3,15 +3,22 @@ from weedmatch import settings
 from payment import serializers as payment_serializers
 from payment import models as payment_models
 from accounts import models as accouns_models
+from accounts import services as accounts_services
+from django.utils import timezone
+import pytz
 import datetime
 import math
-RADIO = 6372.795477598
 
 
 class CountrySerializers(serpy.Serializer):
     id = serpy.Field()
     name = serpy.Field()
     code = serpy. Field()
+
+class TermsConditionsSerializers(serpy.Serializer):
+    id = serpy.Field()
+    title = serpy.Field()
+    description = serpy. Field()
 
 
 class ImagePublicSerializer(serpy.Serializer):
@@ -42,10 +49,9 @@ class ImageSerializer(serpy.Serializer):
 
 
 class ProfileUserSerializers(serpy.Serializer):
-    id = serpy.Field()
+    id_user = serpy.MethodField()
     username = serpy.Field() 
     first_name = serpy.Field()
-    last_name = serpy.Field()
     email = serpy.Field()
     direction = serpy.Field()
     description = serpy.MethodField()
@@ -54,6 +60,11 @@ class ProfileUserSerializers(serpy.Serializer):
     country = serpy.MethodField()
     credit_card = serpy.MethodField()
     age = serpy.MethodField()
+    sex = serpy.Field()
+    match_sex = serpy.Field()
+
+    def get_id_user(self, obj):
+        return obj.id
 
     def get_country(self, obj):
         if not obj.country:
@@ -75,7 +86,7 @@ class ProfileUserSerializers(serpy.Serializer):
         if not profile_image:
             return []
         serializer = ImageSerializer(profile_image, many=True).data
-        return serializer    
+        return serializer
 
     def get_credit_card(self, obj):
         card = payment_models.CreditCard.objects.filter(user=obj.id)
@@ -92,17 +103,17 @@ class ProfileUserSerializers(serpy.Serializer):
 
 
 class PublicProfileUserSerializers(serpy.Serializer):
+    id_user = serpy.MethodField() 
     username = serpy.Field()
     first_name = serpy.Field()
-    last_name = serpy.Field()
-    description = serpy.Field()
+    description = serpy.MethodField()
     country = serpy.MethodField()
     image = serpy.MethodField()
     profile_images = serpy.MethodField()
     age = serpy.MethodField()
-    images_upload = serpy.MethodField()
-    instagram_images = serpy.MethodField()
-    distance = serpy.MethodField()
+
+    def get_id_user(self, obj):
+        return obj.id
 
     def get_image(self, obj):
         if not obj.image:
@@ -113,6 +124,11 @@ class PublicProfileUserSerializers(serpy.Serializer):
         if not obj.country:
             return ""
         return CountrySerializers(obj.country).data
+
+    def get_description(self, obj):
+        if not obj.description:
+            return ""
+        return obj.description
 
     def get_profile_images(self, obj):
         profile_image = accouns_models.ImageProfile.objects.filter(user_id=obj.id)
@@ -127,82 +143,44 @@ class PublicProfileUserSerializers(serpy.Serializer):
         delta = datetime.date.today() - obj.age
         return datetime.date.fromordinal(delta.days).year
 
-    def get_images_upload(self, obj):
-        images = accouns_models.Image.objects.filter(user_id=obj.id).order_by('-id')[:20]
-        if not images:
-            return []
-        serializer = ImagePublicSerializer(images, many=True).data
-        return serializer
-
-    def distances(self, latA: float, lonA: float, latB: float, lonB: float):
-        arccos = math.acos(
-            ((math.sin(latA) * math.sin(latB)) + (math.cos(latA) * math.cos(latB))) * math.cos(lonA - lonB))
-        result = RADIO * arccos
-        degrees = (math.pi * result) / 180
-        if degrees < 0.9:
-            meters = degrees * 1000
-            return str(meters)[:3]+" mts"
-        if degrees > 1:
-            convert = str(degrees)
-            value = convert.find(".")
-            number = convert[value + 1:value + 2]
-            if int(number) >= 5:
-                return str(math.ceil(degrees))[:3]+" km"
-            else:
-                return str(degrees)[0:1]+" km"
-        return ""
-
-    def get_distance(self, obj):
-        images = accouns_models.Image.objects.filter(user_id=obj.id).last()
-        if not images:
-            return ""
-        return self.distances(obj.latitud, obj.longitud,images.latitud, images.longitud)
-
-    def get_instagram_images(self, obj):
-        return ""
-
 
 class PublicFeedSerializers(serpy.Serializer):
-    id = serpy.Field()
-    username = serpy.Field()
-    first_name = serpy.Field()
-    last_name = serpy.Field()
-    distance = serpy.MethodField()
+    id_user = serpy.MethodField()
+    id_image = serpy.Field()
+    username = serpy.MethodField()
+    first_name = serpy.MethodField()
     image = serpy.MethodField()
-    time = serpy.MethodField
+    time = serpy.MethodField()
+    latitud = serpy.Field()
+    longitud = serpy.Field()
+
+    def get_id_user(self, obj):
+        if not obj.user:
+            return ""
+        return obj.get_user_id()
+
+    def get_username(self, obj):
+        if not obj.user:
+            return ""
+        return obj.get_user_username()
+
+    def get_first_name(self, obj):
+        if not obj.user:
+            return ""
+        return obj.get_user_first_name()
 
     def get_time(self, obj):
-        profile_image = accouns_models.ImageProfile.objects.filter(user_id=obj.id).last()
-        if not profile_image:
+        if not obj.date_creation:
             return ""
+        date_now = datetime.datetime.now()
+        local_time = timezone.localtime(obj.date_creation, pytz.timezone('America/Santiago'))
+        date_after = local_time.replace(tzinfo=None)
+        date_result = date_now - date_after
+        services = accounts_services.PublicFeedService()
+        print(date_result)
+        return services.time_format(date_now, date_result)
 
     def get_image(self, obj):
-        profile_image = accouns_models.ImageProfile.objects.filter(user_id=obj.id).last()
-        if not profile_image:
+        if not obj.image:
             return ""
-        serializer = ImageSerializer(profile_image, many=True).data
-        return serializer
-
-    def distances(self, latA: float, lonA: float, latB: float, lonB: float):
-        arccos = math.acos(
-            ((math.sin(latA) * math.sin(latB)) + (math.cos(latA) * math.cos(latB))) * math.cos(lonA - lonB))
-        result = RADIO * arccos
-        degrees = (math.pi * result) / 180
-        if degrees < 0.9:
-            meters = degrees * 1000
-            return str(meters)[:3]+" mts"
-        if degrees > 1:
-            convert = str(degrees)
-            value = convert.find(".")
-            number = convert[value + 1:value + 2]
-            if int(number) >= 5:
-                return str(math.ceil(degrees))[:3]+" km"
-            else:
-                return str(degrees)[0:1]+" km"
-        return ""
-
-    def get_distance(self, obj):
-        images = accouns_models.Image.objects.filter(user_id=obj.id).last()
-        if not images:
-            return ""
-        return self.distances(obj.latitud, obj.longitud,images.latitud, images.longitud)
+        return settings.URL + settings.MEDIA_URL + str(obj.image)

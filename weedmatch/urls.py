@@ -23,17 +23,23 @@ from rest_framework import routers
 router = routers.DefaultRouter()
 router.register(r'payment/card', payment_views.CreditCardViewSet)
 router.register(r'profile', accounts_views.ProfileViewSet)
+router.register(r'public-image', accounts_views.PublicProfileImagesViewSet)
 
 urlpatterns = [
     re_path(r'^jet/', include('jet.urls', 'jet')),
     re_path(r'^jet/dashboard/', include('jet.dashboard.urls', 'jet-dashboard')),
     path('admin/', admin.site.urls),
     path('countrys/', accounts_views.CountryView.as_view()),
+    path('terms-conditions/', accounts_views.TermsConditionsView.as_view()),
     path('register/', accounts_views.RegisterView.as_view()),
     path('forgot-password/', accounts_views.RequestRecoverPassword.as_view()),
     path('recover-password/', accounts_views.RecoverPassword.as_view()),
     path('login/', accounts_views.LoginView.as_view()),
+    path('login-facebook/', accounts_views.LoginFacebookView.as_view()),
+    path('login-instagram/', accounts_views.LoginInstagramView.as_view()),
     path('logout/', accounts_views.LogoutView.as_view()),
+    path('public-profile/<int:pk>/', accounts_views.PublicProfileView.as_view()),
+    path('public-feed/', accounts_views.PublicFeedView.as_view()),
     path('', include(router.urls)),
 ]
 from django.conf.urls.static import static, serve
