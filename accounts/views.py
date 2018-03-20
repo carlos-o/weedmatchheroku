@@ -261,7 +261,8 @@ class PublicProfileView(APIView):
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = accounts_serializers.PublicProfileUserSerializers(user, many=False).data
         try:
-            distance = service.distance_user(request.user, user)
+            distance = service.distance_user(request.user, user,
+                                             request.GET.get('latitud'),request.GET.get('longitud'))
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer["distance"] = distance
@@ -328,7 +329,8 @@ class PublicFeedView(APIView):
         context = paginator.paginate_queryset(public_feed, request)
         serializer_data = accounts_serializers.PublicFeedSerializers(context, many=True).data
         try:
-            serializer = service.distance_feed(request.user, serializer_data)
+            serializer = service.distance_feed(request.user, request.GET.get('latitud'),
+                                               request.GET.get('longitud'), serializer_data)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         return paginator.get_paginated_response(serializer)

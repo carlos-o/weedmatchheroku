@@ -15,8 +15,21 @@ import datetime as datetime_module
 
 
 class UserService:
-
+    """
+        this class controls the login of the user by the different routes in a traditional way,
+        via facebook and instagram, in addition to the closing of the session
+    """
     def login(self, data: dict)->accounts_models.User:
+        """
+            A user registered in the system obtain access to weedmatch
+            this function fails if the user's credentials do not match
+            those registered in the system
+
+            :param data: user information.
+            :type data: dict.
+            :return: user
+            :raises: ValueError
+        """
         if not data.get('username'):
             raise ValueError('{"detail": "El nombre de usuario no puede estar vacio"}')
         if not data.get('password'):
@@ -33,12 +46,24 @@ class UserService:
         return user
 
     def login_facebook(self, data: dict)->accounts_models.User:
+        """
+            A user gets access to weedmatch with their Facebook credentials
+            this function fails if the user's Facebook token does not match
+            when the request is made to the api the Facebook
+
+            :param data: access_token of facebook, latitude and longitude.
+            :type data: dict.
+            :return: user
+            :raises: ValueError
+        """
         if not data.get('access_token'):
             raise ValueError('{"detail": "El campo access_token no puede estar vacio"}')
         if not data.get('latitud'):
             raise ValueError('{"detail": "El campo latitud no puede estar vacio"}')
         if not data.get('longitud'):
             raise ValueError('{"detail": "El campo longitud no puede estar vacio"}')
+
+        # Requests to Facebook API
         get_code_url = 'https://graph.facebook.com/oauth/client_code'
         access_token_url = 'https://graph.facebook.com/v2.9/oauth/access_token'
         graph_api_url = 'https://graph.facebook.com/v2.12/me?fields=id,name,email,birthday,picture.width(200).height(200)'
@@ -53,6 +78,7 @@ class UserService:
         r = requests.get(graph_api_url, params=params)
         if r.status_code == 400:
             raise ValueError('{"detail":"El token de acceso no pertenece a ese usuario"}')
+        # Data obtained by calling Facebook API with user token
         profile = json.loads(r.text)
         username = profile.get('email').split("@")[0]
         user_register = accounts_models.User.objects.filter(facebook_id=profile.get('id'))
@@ -60,7 +86,8 @@ class UserService:
             return user_register[0]
         if accounts_models.User.objects.filter(username=username).exists():
             raise ValueError('{"detail":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
-        #google map api
+
+        # Requests to GoogleMap Api
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
         try:
             reverse_geocode_result = gmaps.reverse_geocode((data.get('latitud'), data.get('longitud')))
@@ -98,9 +125,25 @@ class UserService:
         return user
 
     def login_instagram(self, data: dict)->accounts_models.User:
+        """
+            A user gets access to weedmatch with their instagram credentials
+
+            :param data: access_token of instagram, latitude and longitude.
+            :type data: dict.
+            :return: user
+            :raises: ValueError
+        """
         return True
 
     def logut(self, user: accounts_models.User)-> accounts_models.User:
+        """
+            the user disconnects from the system weedmatch
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :return: user
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         user.last_login = datetime.now()
@@ -228,21 +271,25 @@ class UploadImagePublicProfileService:
             raise ValueError('{"detail": "El campo imagen del feed publico no puede estar vacio"}')
         if not data.get('comment'):
             data['comment'] = ""
+        if not data.get('latitud'):
+            data['latitud'] = user.latitud
+        if not data.get('longitud'):
+            data['longitud'] = user.longitud
         try:
             public_image = accounts_models.Image.objects.create(
                 user_id=user.id,
                 image=data.get('image'),
                 state=data.get('comment'),
-                latitud=user.latitud,
-                longitud=user.longitud
+                latitud=data.get('latitud'),
+                longitud=data.get('longitud')
             )
             public_feed = accounts_models.PublicFeed.objects.create(
                 user_id=user.id,
                 id_image=public_image.id,
                 image=str(public_image.image),
                 state=public_image.state,
-                latitud=user.latitud,
-                longitud=user.longitud,
+                latitud=data.get('latitud'),
+                longitud=data.get('longitud'),
                 date_creation=public_image.created
             )
         except Exception as e:
@@ -365,7 +412,6 @@ class PublicFeedService:
     def list(self, user: accounts_models.User):
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
-        print("user",user.username)
         if user.match_sex == accounts_models.User.SEX_OTHER:
             users = accounts_models.User.objects.all().exclude(username=user.username).exclude(is_superuser=True)
         if user.match_sex == accounts_models.User.SEX_MALE:
@@ -374,7 +420,6 @@ class PublicFeedService:
         if user.match_sex == accounts_models.User.SEX_FEMALE:
             users = accounts_models.User.objects.filter(sex=user.match_sex).exclude(username=user.username)\
                 .exclude(is_superuser=True)
-        print(users)
         ids = users.aggregate(users_id=ArrayAgg('id'))
         public_feed = accounts_models.PublicFeed.objects.filter(user_id__in=ids.get('users_id'))
         return public_feed
@@ -416,10 +461,10 @@ class PublicFeedService:
                 else:
                     return date_string[5:7]+ " seconds"
             if int(date_string[2:3]) == 0:
-                print(date_string[3:4])
+                #print(date_string[3:4])
                 return date_string[3:4] + " minutes"
             else:
-                print(date_string[2:4])
+                #print(date_string[2:4])
                 return date_string[2:4] + " minutes"	
         elif len(date_string) == 8:
             return date_string[0:2] + " hours"
@@ -433,11 +478,15 @@ class PublicFeedService:
                 #print(month[date.strftime("%B")])
                 return date.strftime("%d the %B")
 
-    def distance_feed(self, user: accounts_models.User, datas: list):
+    def distance_feed(self, user: accounts_models.User, latitud: str, longitud: str, datas: list):
+        if not latitud:
+            latitud = user.latitud
+        if not longitud:
+            longitud = user.longitud
         list_accept = []
         for data in datas:
             distance, str_distance = self.distances(float(data.get('latitud')), float(data.get('longitud')),
-                                                    float(user.latitud), float(user.longitud))
+                                                    float(latitud), float(longitud))
             if distance == 999:
                 data['distance'] = str_distance
                 data.pop('latitud')
@@ -451,11 +500,15 @@ class PublicFeedService:
         datas.clear()
         return list_accept
 
-    def distance_user(self, user: accounts_models.User, user_pk: accounts_models.User):
+    def distance_user(self, user: accounts_models.User, user_pk: accounts_models.User, latitud: str, longitud: str):
         public_image_user = accounts_models.Image.objects.filter(user_id=user_pk.id).last()
         if not public_image_user:
             return ""
-        distance, str_distance = self.distances(float(user.latitud), float(user.longitud), 
-                                                float(public_image_user.latitud), float(public_image_user.longitud))
+        if not latitud:
+            latitud = user.latitud
+        if not longitud:
+            longitud = user.longitud
+        distance, str_distance = self.distances(float(latitud), float(longitud),
+                                                float(user_pk.latitud), float(user_pk.longitud))
         return str_distance
 

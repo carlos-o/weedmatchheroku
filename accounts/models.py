@@ -59,7 +59,10 @@ class User(AbstractUser):
     match_sex = models.CharField(_('Match_sex'), max_length=10, choices=TYPE_SEX, default=SEX_OTHER, blank=True, null=True)
     facebook_id = models.CharField(max_length=140, blank=True, null=True)
     facebook_access_token = models.TextField(blank=True, null=True)
-    
+
+    class Meta:
+        ordering = ['id']
+
     def __str__(self):
         return self.username
     
