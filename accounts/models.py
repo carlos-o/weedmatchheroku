@@ -3,14 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import ugettext_lazy as _
 from django.utils.timezone import now
 
-NORMAL = 'normal'
-ADMIN = 'admin'
-
-TYPE_USER = (
-    (NORMAL, _('Normal')),
-    (ADMIN, _('Admin'))
-)
-
 
 class Country(models.Model):
     name = models.CharField(_('Country name'), max_length=50, blank=False, null=False)
@@ -45,8 +37,6 @@ class User(AbstractUser):
     )
 
     country = models.ForeignKey('Country', related_name='country_user', on_delete=models.CASCADE, null=True, blank=True)
-    typeUser = models.CharField(_('TypeUser'), choices=TYPE_USER, max_length=10, default=NORMAL,
-                                blank=False, null=False)
     recovery = models.CharField(_('Recovery'), max_length=40, blank=True)
     image = models.CharField(_('Photo'), max_length=255, blank=True, null=True)
     count_image = models.IntegerField(_('Count'), default=0, blank=True, null=True)
@@ -105,18 +95,6 @@ class Image(models.Model):
     class Meta:
         ordering = ['id']
 
-    def increment_like(self):
-        self.like += 1
-        self.save()
-
-    def decrement_like(self):
-        if self.like == 0:
-            self.like = 0
-            self.save()
-        else:
-            self.like -= 1
-            self.save()
-
     def __str__(self):
         return self.user.username
 
@@ -139,15 +117,17 @@ class PublicFeed(models.Model):
     def __str__(self):
         return self.user.username
 
-    def get_user_id(self):
-        return self.user.id
+    def increment_like(self):
+        self.like += 1
+        self.save()
 
-    def get_user_username(self):
-        return self.user.username
-
-    def get_user_first_name(self):
-        return self.user.first_name
-
+    def decrement_like(self):
+        if self.like == 0:
+            self.like = 0
+            self.save()
+        else:
+            self.like -= 1
+            self.save()
 
 class TermsCondition(models.Model):
     title = models.CharField(_('Title'), max_length=50, blank=False, null=False)

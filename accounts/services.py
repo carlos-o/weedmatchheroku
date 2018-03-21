@@ -12,6 +12,7 @@ import math
 import requests
 import json
 import datetime as datetime_module
+from django.contrib.auth.models import Group
 
 
 class UserService:
@@ -122,6 +123,10 @@ class UserService:
             facebook_id=profile.get('id'),
             facebook_access_token=data.get('access_token')
         )
+        print(user)
+        #add group weedmatch
+        group = Group.objects.get(name='WeedMatch')
+        user.groups.add(group)
         return user
 
     def login_instagram(self, data: dict)->accounts_models.User:
@@ -300,7 +305,7 @@ class UploadImagePublicProfileService:
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         try:
-            imagen = accounts_models.Image.objects.get(id=id_image, user_id=id_user)
+            imagen = accounts_models.PublicFeed.objects.get(id_image=id_image, user_id=id_user)
         except accounts_models.Image.DoesNotExist:
             raise ValueError('{"detail": "La imagen no existe en tu perfil publico"}')
         if not data.get('like'):
@@ -374,6 +379,10 @@ class RegisterUserService:
             user.save(force_insert=True)
         except Exception as e:
             raise ValueError('{"user": "ha ocurrido un error al guardar el usuario"}')
+        print(user)
+        #add group weedmatch
+        group = Group.objects.get(name='WeedMatch')
+        user.groups.add(group)
         return user
 
 

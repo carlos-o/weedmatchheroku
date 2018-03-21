@@ -17,7 +17,7 @@ class UserAdmin(UserAdminProfile):
                                ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
                            }),
     )
-    list_display = ('id', 'username', 'email', 'typeUser')
+    list_display = ('id', 'username', 'email', 'country', 'age')
     search_fields = ('username', 'first_name', 'last_name',)
 
     def get_ordering(self, request):

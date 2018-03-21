@@ -158,9 +158,11 @@ class PublicProfileUserSerializers(serpy.Serializer):
 class PublicFeedSerializers(serpy.Serializer):
     id_user = serpy.MethodField()
     id_image = serpy.Field()
+    like = serpy.Field()
     username = serpy.MethodField()
     first_name = serpy.MethodField()
     image = serpy.MethodField()
+    image_profile = serpy.MethodField()
     time = serpy.MethodField()
     latitud = serpy.Field()
     longitud = serpy.Field()
@@ -168,17 +170,17 @@ class PublicFeedSerializers(serpy.Serializer):
     def get_id_user(self, obj):
         if not obj.user:
             return ""
-        return obj.get_user_id()
+        return str(obj.user.id)
 
     def get_username(self, obj):
         if not obj.user:
             return ""
-        return obj.get_user_username()
+        return obj.user.username
 
     def get_first_name(self, obj):
         if not obj.user:
             return ""
-        return obj.get_user_first_name()
+        return obj.user.first_name
 
     def get_time(self, obj):
         if not obj.date_creation:
@@ -195,3 +197,10 @@ class PublicFeedSerializers(serpy.Serializer):
         if not obj.image:
             return ""
         return settings.URL + settings.MEDIA_URL + str(obj.image)
+
+    def get_image_profile(self, obj):
+        if not obj.user.image:
+            return ""
+        if re.search("https", obj.user.image):
+            return obj.user.image
+        return settings.URL + settings.MEDIA_URL + str(obj.user.image)
