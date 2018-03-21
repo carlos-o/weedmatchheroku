@@ -127,8 +127,8 @@ class RequestRecoverPassword(APIView):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         if notifications_views.recover_password(user, request):
-            expire = datetime.now() + timedelta(minutes=10)
-            accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
+            #expire = datetime.now() + timedelta(minutes=10)
+            #accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
             return Response({'detail': 'el correo se ha enviado con exito'}, status=status.HTTP_200_OK)
         return Response({'detail': 'Problemas del servidor no se ha podido realizar la peticion'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
