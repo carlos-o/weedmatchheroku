@@ -184,8 +184,8 @@ class PublicFeedSerializers(serpy.Serializer):
         if not obj.date_creation:
             return ""
         date_now = datetime.datetime.now()
-        local_time = timezone.localtime(obj.date_creation, pytz.timezone('America/Santiago'))
-        date_after = local_time.replace(tzinfo=None)
+        #local_time = timezone.localtime(obj.date_creation, pytz.timezone('America/Santiago'))
+        date_after = obj.date_creation.replace(tzinfo=None)
         date_result = date_now - date_after
         services = accounts_services.PublicFeedService()
         print(date_result)
