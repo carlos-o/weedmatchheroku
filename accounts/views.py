@@ -40,7 +40,7 @@ class LoginView(APIView):
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login,
-                         'image_profile': settings.URL+settings.MEDIA_URL+user.image}, status=status.HTTP_200_OK)
+                         'image_profile': service.image_user(user)}, status=status.HTTP_200_OK)
 
 
 class LoginFacebookView(APIView):
@@ -56,7 +56,7 @@ class LoginFacebookView(APIView):
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login,
-                         'image_profile': user.image}, status=status.HTTP_200_OK)
+                         'image_profile': service.image_user(user)}, status=status.HTTP_200_OK)
 
 
 class LoginInstagramView(APIView):

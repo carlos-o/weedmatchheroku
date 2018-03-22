@@ -124,7 +124,6 @@ class UserService:
             facebook_access_token=data.get('access_token')
         )
         print(user)
-        #add group weedmatch
         group = Group.objects.get(name='WeedMatch')
         user.groups.add(group)
         return user
@@ -139,6 +138,13 @@ class UserService:
             :raises: ValueError
         """
         return True
+
+    def image_user(self, user: accounts_models.User):
+        if not user.image:
+            return ""
+        if re.search("https", user.image):
+            return user.image
+        return settings.URL + settings.MEDIA_URL + str(user.image)
 
     def logut(self, user: accounts_models.User)-> accounts_models.User:
         """
@@ -386,7 +392,7 @@ class RegisterUserService:
         except Exception as e:
             raise ValueError('{"user": "ha ocurrido un error al guardar el usuario"}')
         print(user)
-        #add group weedmatch
+        # add group weedmatch
         group = Group.objects.get(name='WeedMatch')
         user.groups.add(group)
         return user
