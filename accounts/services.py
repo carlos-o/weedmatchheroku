@@ -266,7 +266,13 @@ class UploadImagePublicProfileService:
     def list(self, user: accounts_models.User)->accounts_models.Image:
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
-        images = accounts_models.Image.objects.filter(user_id=user.id)
+        images = accounts_models.PublicFeed.objects.filter(user_id=user.id)
+        return images
+
+    def retrieve(self, user: accounts_models.User, pk: int)->accounts_models.Image:
+        if user is None or user.is_active is False:
+            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+        images = accounts_models.PublicFeed.objects.filter(user_id=pk)
         return images
 
     def create(self, user: accounts_models.User, data: dict)->accounts_models.Image:

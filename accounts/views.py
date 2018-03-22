@@ -39,8 +39,8 @@ class LoginView(APIView):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login},
-                        status=status.HTTP_200_OK)
+        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login,
+                         'image_profile': settings.URL+settings.MEDIA_URL+user.image}, status=status.HTTP_200_OK)
 
 
 class LoginFacebookView(APIView):
@@ -55,8 +55,8 @@ class LoginFacebookView(APIView):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login},
-                        status=status.HTTP_200_OK)
+        return Response({'token': token.key, 'id': user.id, 'username': user.username, 'last_login': user.last_login,
+                         'image_profile': user.image}, status=status.HTTP_200_OK)
 
 
 class LoginInstagramView(APIView):
@@ -127,8 +127,8 @@ class RequestRecoverPassword(APIView):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         if notifications_views.recover_password(user, request):
-            #expire = datetime.now() + timedelta(minutes=10)
-            #accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
+            expire = datetime.now() + timedelta(minutes=10)
+            accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
             return Response({'detail': 'el correo se ha enviado con exito'}, status=status.HTTP_200_OK)
         return Response({'detail': 'Problemas del servidor no se ha podido realizar la peticion'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -277,6 +277,17 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
         service = accounts_services.UploadImagePublicProfileService()
         try:
             image = service.list(request.user)
+        except Exception as e:
+            return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+        paginator = PageNumberPagination()
+        context = paginator.paginate_queryset(image, request)
+        serializer = accounts_serializers.ImagePublicSerializer(context, many=True).data
+        return paginator.get_paginated_response(serializer)
+
+    def retrieve(self, request, pk):
+        service = accounts_services.UploadImagePublicProfileService()
+        try:
+            image = service.retrieve(request.user, pk)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         paginator = PageNumberPagination()
