@@ -129,6 +129,23 @@ class PublicFeed(models.Model):
             self.like -= 1
             self.save()
 
+
+class LikeUser(models.Model):
+    id_user = models.IntegerField(_('user_id'), blank=True, null=True)
+    id_public_feed = models.IntegerField(_('public_feed_id'), blank=True, null=True)
+    like = models.BooleanField(default=False, blank=False, null=False)
+
+    def __str__(self):
+        return str(self.id)
+
+    def change_like(self, band):
+        if band:
+            self.like = True
+            self.save()
+        else:
+            self.like = False
+            self.save()
+
 class TermsCondition(models.Model):
     title = models.CharField(_('Title'), max_length=50, blank=False, null=False)
     description = models.TextField(_('Description'), blank=False, null=False)

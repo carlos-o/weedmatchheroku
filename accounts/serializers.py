@@ -57,7 +57,7 @@ class ProfileUserSerializers(serpy.Serializer):
     email = serpy.Field()
     direction = serpy.MethodField()
     description = serpy.MethodField()
-    image = serpy.MethodField()
+    image_profile = serpy.MethodField()
     profile_images = serpy.MethodField()
     country = serpy.MethodField()
     credit_card = serpy.MethodField()
@@ -78,7 +78,7 @@ class ProfileUserSerializers(serpy.Serializer):
             return ""
         return CountrySerializers(obj.country).data 
 
-    def get_image(self, obj):
+    def get_image_profile(self, obj):
         if not obj.image:
             return ""
         if re.search("https", obj.image):
@@ -117,14 +117,14 @@ class PublicProfileUserSerializers(serpy.Serializer):
     first_name = serpy.Field()
     description = serpy.MethodField()
     country = serpy.MethodField()
-    image = serpy.MethodField()
+    image_profile = serpy.MethodField()
     profile_images = serpy.MethodField()
     age = serpy.MethodField()
 
     def get_id_user(self, obj):
         return obj.id
 
-    def get_image(self, obj):
+    def get_image_profile(self, obj):
         if not obj.image:
             return ""
         if re.search("https", obj.image):
@@ -156,6 +156,7 @@ class PublicProfileUserSerializers(serpy.Serializer):
 
 
 class PublicFeedSerializers(serpy.Serializer):
+    id = serpy.Field()
     id_user = serpy.MethodField()
     id_image = serpy.Field()
     like = serpy.Field()
@@ -166,6 +167,7 @@ class PublicFeedSerializers(serpy.Serializer):
     time = serpy.MethodField()
     latitud = serpy.Field()
     longitud = serpy.Field()
+    band = serpy.MethodField()
 
     def get_id_user(self, obj):
         if not obj.user:
@@ -204,3 +206,6 @@ class PublicFeedSerializers(serpy.Serializer):
         if re.search("https", obj.user.image):
             return obj.user.image
         return settings.URL + settings.MEDIA_URL + str(obj.user.image)
+
+    def get_band(self, obj):
+        return "False"

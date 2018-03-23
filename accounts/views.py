@@ -333,15 +333,17 @@ class PublicFeedView(APIView):
     def get(self, request):
         service = accounts_services.PublicFeedService()
         try:
-            public_feed = service.list(request.user)
+            public_feed, id_public_feed = service.list(request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         paginator = PageNumberPagination()
         context = paginator.paginate_queryset(public_feed, request)
         serializer_data = accounts_serializers.PublicFeedSerializers(context, many=True).data
+        serializer_like = service.like_user(request.user.id, serializer_data, id_public_feed)
         try:
             serializer = service.distance_feed(request.user, request.GET.get('latitud'),
-                                               request.GET.get('longitud'), serializer_data)
+                                               request.GET.get('longitud'), serializer_like)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
+
         return paginator.get_paginated_response(serializer)

@@ -91,7 +91,7 @@ class UserService:
         # Requests to GoogleMap Api
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
         try:
-            reverse_geocode_result = gmaps.reverse_geocode((data.get('latitud'), data.get('longitud')))
+            reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
         except googlemaps.exceptions.ApiError:
             raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
         direction = reverse_geocode_result[1].get('formatted_address')
@@ -140,6 +140,13 @@ class UserService:
         return True
 
     def image_user(self, user: accounts_models.User):
+        """
+            return the image profile of user
+            :param user: user weedmatch.
+            :type user: Model User.
+            :return: user.image or "" or user.image with path
+            :raises: None
+        """
         if not user.image:
             return ""
         if re.search("https", user.image):
@@ -324,8 +331,19 @@ class UploadImagePublicProfileService:
             raise ValueError('{"detail": "el campo like no puede estar vacio"}')
         if data.get('like') == "True" or data.get('like') == "true":
             imagen.increment_like()
+            try:
+                like_user = accounts_models.LikeUser.objects.get(id_user=user.id, id_public_feed=imagen.id)
+                like_user.change_like(True)
+            except accounts_models.LikeUser.DoesNotExist:
+                like_create = accounts_models.LikeUser.objects.create(
+                    id_user=user.id,
+                    id_public_feed=imagen.id,
+                    like=True
+                )
         elif data.get('like') == "False" or data.get('like') == "false":
             imagen.decrement_like()
+            like_user = accounts_models.LikeUser.objects.get(id_user=user.id, id_public_feed=imagen.id)
+            like_user.change_like(False)
         if not re.search(r'^(true|True|false|False)$', data.get('like')):
             raise ValueError('{"detail":"No se puede anexar un nuevo me gusta a su imagen publica"}')
         return imagen
@@ -337,7 +355,7 @@ class UploadImagePublicProfileService:
             imagen = accounts_models.Image.objects.get(id=id_image, user_id=user.id)
         except accounts_models.Image.DoesNotExist:
             raise ValueError('{"detail": "La imagen no existe en tu feed publico o la has eliminado"}')
-        os.remove(os.path.join(settings.MEDIA_ROOT, str(imagen.image.name)))
+        #os.remove(os.path.join(settings.MEDIA_ROOT, str(imagen.image.name)))
         imagen.delete()
         return user
 
@@ -369,7 +387,7 @@ class RegisterUserService:
         """
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
         try:
-            reverse_geocode_result = gmaps.reverse_geocode((data.get('latitud'), data.get('longitud')))
+            reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
         except googlemaps.exceptions.ApiError:
             raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
         direction = reverse_geocode_result[1].get('formatted_address')
@@ -443,7 +461,7 @@ class PublicFeedService:
                 .exclude(is_superuser=True)
         ids = users.aggregate(users_id=ArrayAgg('id'))
         public_feed = accounts_models.PublicFeed.objects.filter(user_id__in=ids.get('users_id'))
-        return public_feed
+        return public_feed, public_feed.aggregate(id_public_feed=ArrayAgg('id'))
     
     def public_profile(self, user: accounts_models.User, pk: int)-> accounts_models.User:
         if user is None or user.is_active is False:
@@ -533,3 +551,11 @@ class PublicFeedService:
                                                 float(user_pk.latitud), float(user_pk.longitud))
         return str_distance
 
+    def like_user(self, id_user: int, datas: dict, ids: dict):
+        like_user = accounts_models.LikeUser.objects.filter(id_user=id_user,
+                                                            id_public_feed__in=ids.get('id_public_feed'))
+        for list in like_user:
+            for data in datas:
+                if list.id_public_feed == data.get('id'):
+                    data['band'] = str(list.like)
+        return datas
