@@ -39,7 +39,7 @@ FACEBOOK_CLIEND_ID = '1657894947628619'
 URL = "https://weedmatch.herokuapp.com"
 
 ALLOWED_HOSTS = ['localhost:8000','weedmatch.herokuapp.com', 
-'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.4:8080', '192.168.0.4']
+'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.21:8080', '192.168.0.21']
 
 # Application definition
 

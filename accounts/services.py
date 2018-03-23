@@ -363,8 +363,9 @@ class UploadImagePublicProfileService:
 class RegisterUserService:
 
     def create(self, data: dict) -> accounts_models.User:
+        print(data)
         date = data['age'][:10]
-        if not date or not data.get('age'):
+        if not date and not data.get('age'):
             raise ValueError('{"age": "El campo de fecha no puede estar vacio"}')
         match = re.match(r'([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))', date)
         if not match:
@@ -375,6 +376,7 @@ class RegisterUserService:
             raise ValueError('{"age": "el día está fuera de rango por mes"}')
         validator = accounts_validations.RegisterUserValidate(data)
         if validator.validate() is False:
+            print(validator.errors())
             raise ValueError(validator.errors())
         if accounts_models.User.objects.filter(username=data.get('username')).exists():
             raise ValueError('{"username":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
@@ -390,13 +392,20 @@ class RegisterUserService:
             reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
         except googlemaps.exceptions.ApiError:
             raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
-        direction = reverse_geocode_result[1].get('formatted_address')
-        count =len(reverse_geocode_result) -1
-        country_map = reverse_geocode_result[count].get('formatted_address')
-        try:
-            country = accounts_models.Country.objects.filter(name=country_map)
-        except accounts_models.Country.DoesNotExist:
-            raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
+        if len(reverse_geocode_result) == 1:
+            direction = reverse_geocode_result[0].get('formatted_address')
+            for lists in reverse_geocode_result[0].get('address_components'):
+                country = accounts_models.Country.objects.filter(name=lists.get('long_name'))
+                if not len(country) == 0:
+                    break 
+        else:
+            direction = reverse_geocode_result[1].get('formatted_address')    
+            count =len(reverse_geocode_result) -1
+            country_map = reverse_geocode_result[count].get('formatted_address')
+            try:
+                country = accounts_models.Country.objects.filter(name=country_map)
+            except accounts_models.Country.DoesNotExist:
+                raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
         user = accounts_models.User()
         data["country_id"] = country[0].id
         data["direction"] = direction
