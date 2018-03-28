@@ -37,6 +37,7 @@ GOOGLE_MAPS_KEY = 'AIzaSyBXRURCypqvoeRmYErkYGiJ5qFSYjAoJHo'
 FACEBOOK_SECRET = '4448858b31afb23a0b7f44eb1e63974d'
 FACEBOOK_CLIEND_ID = '1657894947628619'
 URL = "https://weedmatch.herokuapp.com"
+#URL = "http://192.168.0.21:8080"
 
 ALLOWED_HOSTS = ['localhost:8000','weedmatch.herokuapp.com', 
 'localhost', '0.0.0.0', '127.0.0.1', '192.168.0.21:8080', '192.168.0.21']

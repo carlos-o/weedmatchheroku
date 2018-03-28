@@ -106,6 +106,7 @@ class RegisterView(APIView):
     permission_classes = (permissions.AllowAny,)
     
     def post(self, request):
+        print(request.data)
         register = accounts_services.RegisterUserService()
         try:
             data = register.create(request.data) 
@@ -218,7 +219,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(user, many=False).data
         serializer['detail'] = 'Has subido una imagen a tu perfil exitosamente'
         return Response(serializer, status=status.HTTP_201_CREATED)
-    
+
     @detail_route(methods=['delete'], url_path='delete-image/(?P<id_image>[0-9]+)',
                   permission_classes=(permissions.IsAuthenticated,))
     def delete_image(self, request, pk=None, id_image=None):
@@ -248,6 +249,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
                          'id': profile.id,
                          'username': profile.username, 
                          'last_login': profile.last_login}, status=status.HTTP_200_OK)
+
+    @detail_route(methods=['put'], url_path='update-distance',
+                  permission_classes=(permissions.IsAuthenticated,))
+    def update_distance(self, request, pk=None):
+        instance = self.get_object()
+        service = accounts_services.ProfileUser()
+        try:
+            user = service.update_distance(instance, request.data)
+        except Exception as e:
+            return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "has editado la distancia de busqueda de usuarios", "distance": user.distance},
+                        status=status.HTTP_201_CREATED)
 
 
 class PublicProfileView(APIView):

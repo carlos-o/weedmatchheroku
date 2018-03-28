@@ -10,8 +10,8 @@ class UserAdmin(UserAdminProfile):
     fieldsets = (
         (None, {'fields':
                     ('username', 'first_name', 'email', 'password', 'country', 'direction', 'age',
-                     'sex', 'image', 'count_image', 'latitud', 'longitud', 'description', 'match_sex',
-                     'facebook_id', 'facebook_access_token')
+                     'sex', 'image', 'count_image', 'latitud', 'longitud', 'description', 'distance',
+                     'match_sex', 'facebook_id', 'facebook_access_token')
                 }),
         (('Permissions'), {'fields':
                                ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
@@ -27,6 +27,15 @@ class UserAdmin(UserAdminProfile):
 class CountryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'code')
     search_fields = ('name', 'code',)
+
+    def get_ordering(self, request):
+        return ['id']
+
+
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('id', 'country', 'name',)
+    search_fields = ('name',)
+    list_filter = ('country',)
 
     def get_ordering(self, request):
         return ['id']
@@ -68,9 +77,15 @@ class PublicFeedAdmin(admin.ModelAdmin):
         return ['id']
 
 
+class LikeUserAdmin(admin.ModelAdmin):
+    list_filter = ('id', 'id_user', 'id_public_feed')
+
+
 admin.site.register(accounts_models.PublicFeed, PublicFeedAdmin)
 admin.site.register(accounts_models.ImageProfile, ImageProfileAdmin)
 admin.site.register(accounts_models.Image, ImageAdmin)
 admin.site.register(accounts_models.User, UserAdmin)
 admin.site.register(accounts_models.Country, CountryAdmin)
+admin.site.register(accounts_models.City, CityAdmin)
 admin.site.register(accounts_models.TermsCondition, TermConditionAdmin)
+admin.site.register(accounts_models.LikeUser, LikeUserAdmin)

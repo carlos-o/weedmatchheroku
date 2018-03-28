@@ -28,7 +28,7 @@ class UserService:
 
             :param data: user information.
             :type data: dict.
-            :return: user
+            :return: Model User
             :raises: ValueError
         """
         if not data.get('username'):
@@ -54,7 +54,7 @@ class UserService:
 
             :param data: access_token of facebook, latitude and longitude.
             :type data: dict.
-            :return: user
+            :return: Model User
             :raises: ValueError
         """
         if not data.get('access_token'):
@@ -68,14 +68,12 @@ class UserService:
         get_code_url = 'https://graph.facebook.com/oauth/client_code'
         access_token_url = 'https://graph.facebook.com/v2.9/oauth/access_token'
         graph_api_url = 'https://graph.facebook.com/v2.12/me?fields=id,name,email,birthday,picture.width(200).height(200)'
-
         params = {
             'client_id': settings.FACEBOOK_CLIEND_ID,
             'redirect_uri': "192.168.0.21",
             'client_secret': settings.FACEBOOK_SECRET,
             'access_token': data.get('access_token')
         }
-
         r = requests.get(graph_api_url, params=params)
         if r.status_code == 400:
             raise ValueError('{"detail":"El token de acceso no pertenece a ese usuario"}')
@@ -134,18 +132,19 @@ class UserService:
 
             :param data: access_token of instagram, latitude and longitude.
             :type data: dict.
-            :return: user
+            :return: Model User
             :raises: ValueError
         """
         return True
 
     def image_user(self, user: accounts_models.User):
         """
-            return the image profile of user
+            Return the image profile of user
+
             :param user: user weedmatch.
             :type user: Model User.
             :return: user.image or "" or user.image with path
-            :raises: None
+            :raise: None
         """
         if not user.image:
             return ""
@@ -155,12 +154,12 @@ class UserService:
 
     def logut(self, user: accounts_models.User)-> accounts_models.User:
         """
-            the user disconnects from the system weedmatch
+            The user disconnects from the system weedmatch
 
             :param user: user weedmatch.
             :type user: Model User.
-            :return: user
-            :raises: ValueError
+            :return: ModelUser
+            :raise: ValueError
         """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
@@ -171,16 +170,39 @@ class UserService:
 
 
 class ProfileUser:
-
+    """
+        This class service contain method related with the user profile
+    """
     def list(self, user: accounts_models.User)-> accounts_models.User:
+        """
+            This method get the user information call in database
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :return: Model User.
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}')
-        data = accounts_models.User.objects.filter(id=user.id)
+        user_data = accounts_models.User.objects.filter(id=user.id)
         if user.is_staff:
-            data = accounts_models.User.objects.all()
-        return data
+            user_data = accounts_models.User.objects.all()
+        return user_data
     
     def update(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+        """
+            With this method we can update the user information, you can only update the username,
+            username, description, address, country, city and match_sex that depending on the user's
+            trend the profiles will be filtered in all the functions of the weedmatch.
+            this function raises an exception if the user changes his username for another one that is in use
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :param data: user data.
+            :type data: dict.
+            :return: Model User.
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
         validator = accounts_validations.ProfileUserValidate(data)
@@ -198,7 +220,7 @@ class ProfileUser:
         if data.get('description'):
             user.description = data.get('description')
         if not data.get('last_name'):
-            data['last_name']= ""
+            data['last_name'] = ""
         user.first_name = data.get('first_name')
         user.last_name = data.get('last_name')
         user.direction = data.get('direction')
@@ -208,6 +230,18 @@ class ProfileUser:
         return user
     
     def change_password(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+        """
+            change the password user, this method receives the user's previous password and the new password.
+            this function generates an exception when the user's previous password does not match the current
+            one or the new password it does not have characters and numbers
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :param data: user data.
+            :type data: dict.
+            :return: Model User
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
         if not data.get('old_password'):
@@ -223,6 +257,18 @@ class ProfileUser:
         return user
     
     def upload_images(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+        """
+            the user can upload images for his profile, if he has not assigned a still the first image
+            to upload he will be placed in profile, this method raises exception if the user try
+            upload a seventh image
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :param data: user data.
+            :type data: dict
+            :return: Model User
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}') 
         if not data.get('image'):
@@ -240,55 +286,142 @@ class ProfileUser:
         return user
     
     def delete_images(self, user: accounts_models.User, id_image: int)-> accounts_models.User:
+        """
+            Delete one image assigned to profile user, this method raises a exception if the id of image
+            not exits in database
+
+            :param user: user weedmatch.
+            :type user: Model User
+            :param id_image: id of image profile.
+            :type id_image: integer
+            :return: Model User
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         try:
-            image = accounts_models.ImageProfile.objects.get(id=id_image,user_id=user.id) 
+            image = accounts_models.ImageProfile.objects.get(id=id_image, user_id=user.id)
         except accounts_models.ImageProfile.DoesNotExist:
             raise ValueError('{"detail": "no existe la imagen en tu profile"}')
         if user.image == str(image.image_profile):
             user.image = ""
             user.save()
-        os.remove(os.path.join(settings.MEDIA_ROOT,str(image.image_profile.name)))
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(image.image_profile.name)))
         image.delete()
         user.count_delete()
         return user
 
     def list_image_profile(self, user: accounts_models.User,)-> accounts_models.ImageProfile:
+        """
+            Get all images assigned to the profile user
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :return: Model ImageProfile
+            :raise: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
-        try:
-            images_profile = accounts_models.ImageProfile.objects.filter(user_id=user.id) 
-        except accounts_models.ImageProfile.DoesNotExist:
-            raise ValueError('{"detail": "no existe la imagen en tu profile"}')
+        images_profile = accounts_models.ImageProfile.objects.filter(user_id=user.id)
         return images_profile
 
     def assing_image_profile(self, user: accounts_models.User, id_image: int)-> accounts_models.User:
+        """
+            Assigned a image for profile user, this image can see for all user in weedmtach, this method
+            raise a exception if id of image not exist in database
+
+            :param user: user weedmtach
+            :type user: Model User
+            :param id_image: id of image profile
+            :type id_image: integer
+            :return: Model User
+            :raise: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         try:
-            image = accounts_models.ImageProfile.objects.get(id=id_image,user_id=user.id) 
+            image = accounts_models.ImageProfile.objects.get(id=id_image, user_id=user.id)
         except accounts_models.ImageProfile.DoesNotExist:
             raise ValueError('{"detail": "no existe la imagen en tu profile"}')
         user.assign_image_profile(str(image.image_profile))
         return user
 
+    def update_distance(self, user: accounts_models.User, data: dict)-> accounts_models.User:
+        """
+            A user can change the distance in which people appear in the public feed 420.
+            this method raise a exception when the distance they are not numbers or exceed the limits.
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :param data: distance
+            :type data: ditc
+            :return: Model User.
+            :raises: ValueError
+        """
+        if user is None or user.is_active is False:
+            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}')
+        if not data.get('distance'):
+            raise ValueError('{"distance":"el campo distance no puede estar vacio"}')
+        if not re.match("[0-9]+", data.get("distance")):
+            raise ValueError('{"distance":"el valor distancia solo puede ser numeros"}')
+        data["distance"] = int(data.get("distance"))
+        validator = accounts_validations.ProfileUserDistance(data)
+        if validator.validate() is False:
+            raise ValueError(validator.errors())
+        user.distance = data.get('distance')
+        user.save()
+        return user
+
 
 class UploadImagePublicProfileService:
+    """
+        this class contain a crud for the image upload to public feed 420
+    """
+    def list(self, user: accounts_models.User)->accounts_models.PublicFeed:
+        """
+            Get all images upload to public feed 420. if user is admin o staff the can see all
+            images upload for any user in weedmtach.
 
-    def list(self, user: accounts_models.User)->accounts_models.Image:
+            :param user: user weedmatch
+            :type user: Model User
+            :return: Model PublicFeed
+            :raise: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
-        images = accounts_models.PublicFeed.objects.filter(user_id=user.id)
+        if user.is_staff:
+            images = accounts_models.PublicFeed.objects.all()
+        else:
+            images = accounts_models.PublicFeed.objects.filter(user_id=user.id)
         return images
 
-    def retrieve(self, user: accounts_models.User, pk: int)->accounts_models.Image:
+    def retrieve(self, user: accounts_models.User, pk: int)->accounts_models.PublicFeed:
+        """
+            Get all image for one user in public feed 420. this service is called when another user views the
+            public profile and wants to see the images that he has uploaded to the public feed 420
+
+            :param user: user weematch
+            :param pk: id another user
+            :type pk: integer
+            :return: Model PublicFeed
+            :raise: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         images = accounts_models.PublicFeed.objects.filter(user_id=pk)
         return images
 
     def create(self, user: accounts_models.User, data: dict)->accounts_models.Image:
+        """
+            A user cant upload a image to public feed 420, if the user does not activate the gps when uploading
+            the image it will take the latitude and longitude registered in the user
+
+            :param user: user weedmatch
+            :param data: image, comment, latitud and longitud
+            :type data: dict
+            :return: Model Image
+            :raises: ValueError
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         if not data.get('image'):
@@ -320,13 +453,24 @@ class UploadImagePublicProfileService:
             raise ValueError('{"detail": "ha ocurrido un error al guardar la imagen"}')
         return public_image
 
-    def update(self, user: accounts_models.User, data: dict, id_image: int, id_user: int)->accounts_models.Image:
+    def update(self, user: accounts_models.User, data: dict, id_image: int, id_user: int)->accounts_models.PublicFeed:
+        """
+            Assigned a weed-like or weed-deslike for one image in public feed 420, in this service a
+            logged in user who has viewed the photo of another can like or take away that I like that user
+
+            :param user: user weedmatch
+            :param data: like (true or false)
+            :param id_image: id of image public feed
+            :param id_user: id of another user
+            :return:
+        """
+        print(data)
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         try:
             imagen = accounts_models.PublicFeed.objects.get(id_image=id_image, user_id=id_user)
         except accounts_models.Image.DoesNotExist:
-            raise ValueError('{"detail": "La imagen no existe en tu perfil publico"}')
+            raise ValueError('{"detail": "La imagen no existe no puedes agregarle un weed-like"}')
         if not data.get('like'):
             raise ValueError('{"detail": "el campo like no puede estar vacio"}')
         if data.get('like') == "True" or data.get('like') == "true":
@@ -345,25 +489,48 @@ class UploadImagePublicProfileService:
             like_user = accounts_models.LikeUser.objects.get(id_user=user.id, id_public_feed=imagen.id)
             like_user.change_like(False)
         if not re.search(r'^(true|True|false|False)$', data.get('like')):
-            raise ValueError('{"detail":"No se puede anexar un nuevo me gusta a su imagen publica"}')
+            raise ValueError('{"detail":"No se puede anexar un nuevo me gusta a la imagen publica"}')
         return imagen
 
-    def delete(self, user:accounts_models.User, id_image: int)-> accounts_models.User:
+    def delete(self, user: accounts_models.User, id_image: int)-> bool:
+        """
+            A user cant delete one image upload in public feed 420, this method raise a exception if the
+            image does not exist in the accounts of user.
+
+            :param user: user weematch
+            :param id_image: id of public image
+            :type user: integer
+            :return: True
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
         try:
             imagen = accounts_models.Image.objects.get(id=id_image, user_id=user.id)
         except accounts_models.Image.DoesNotExist:
-            raise ValueError('{"detail": "La imagen no existe en tu feed publico o la has eliminado"}')
+            raise ValueError('{"detail": "La imagen no existe en tu feed publico o ya la has eliminado"}')
         #os.remove(os.path.join(settings.MEDIA_ROOT, str(imagen.image.name)))
         imagen.delete()
-        return user
+        return True
 
 
 class RegisterUserService:
-
+    """
+        this class contain a method to register user in weedmatch
+    """
     def create(self, data: dict) -> accounts_models.User:
+        """
+            register a user in the system weedmtach, this method validate all information and if everything
+            is correct register the user, this method raises a exception when the username exist, as well as
+            the mail exist.
+
+            :param data: contain all information to register a user in weedmatch
+            first_name, username, email, password, latitud, longitud, age, sex
+            :type data: dict
+            :return: Model User.
+            :raises: ValueError
+        """
         print(data)
+        #validation of the date birth date
         date = data['age'][:10]
         if not date and not data.get('age'):
             raise ValueError('{"age": "El campo de fecha no puede estar vacio"}')
@@ -378,8 +545,10 @@ class RegisterUserService:
         if validator.validate() is False:
             print(validator.errors())
             raise ValueError(validator.errors())
+        #validation for the username
         if accounts_models.User.objects.filter(username=data.get('username')).exists():
             raise ValueError('{"username":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
+        #validation for the email
         if not re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', data.get('email')):
             raise ValueError('{"email":"por favor escriba una direccion de correo valida"}')
         if accounts_models.User.objects.filter(email=data.get('email')).exists():
@@ -387,6 +556,7 @@ class RegisterUserService:
         """
         necesito para la api en produccion el googlemaps api key del cliente
         """
+        # Requests to GoogleMap Api
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
         try:
             reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
@@ -397,10 +567,10 @@ class RegisterUserService:
             for lists in reverse_geocode_result[0].get('address_components'):
                 country = accounts_models.Country.objects.filter(name=lists.get('long_name'))
                 if not len(country) == 0:
-                    break 
+                    break
         else:
-            direction = reverse_geocode_result[1].get('formatted_address')    
-            count =len(reverse_geocode_result) -1
+            direction = reverse_geocode_result[1].get('formatted_address')
+            count = len(reverse_geocode_result) - 1
             country_map = reverse_geocode_result[count].get('formatted_address')
             try:
                 country = accounts_models.Country.objects.filter(name=country_map)
@@ -412,7 +582,7 @@ class RegisterUserService:
         data["last_name"] = ""
         for key in data.keys():
             if key == 'password':
-                data[key] = make_password(data[key]) 
+                data[key] = make_password(data[key])
             setattr(user, key, data[key])
         try:
             user.save(force_insert=True)
@@ -426,8 +596,20 @@ class RegisterUserService:
 
 
 class RecoverPasswordService:
-
+    """
+        this class controls the validation of the mail at the moment in which the user makes a request to change
+        the password, as well as the code that sends the results of the request.
+    """
     def check_email(self, data: dict) -> accounts_models.User:
+        """
+            this method verifies that the email sent by the user exists in the database,
+            raise a exception if the email does not exist
+
+            :param data: user's email
+            :type data: dict
+            :return: Model User
+            :raises: ValueError
+        """
         if not data.get('email'):
             raise ValueError('{"detail": "el campo correo no puede estar vacio"}')
         try:
@@ -439,6 +621,16 @@ class RecoverPasswordService:
         return user
 
     def check_code(self, data: dict) -> accounts_models.User:
+        """
+            this method verifies the code sent by the user and if this is in your profile you can make a
+            password change, this code is obtained in the previous method. raises exception when the code does
+            not exits in the user.
+
+            :param data: code and new password
+            :type data: dict
+            :return: Model User
+            :raises: ValueError
+        """
         if not data.get('code'):
             raise ValueError('{"detail": "El campo codigo no puede estar vacio"}')
         if not data.get('password'):
@@ -456,8 +648,19 @@ class RecoverPasswordService:
 
 
 class PublicFeedService:
-
+    """
+        in this class posse all the necessary methods to visualize people in the public feed 420,
+        among them the search of them, the calculation of distance and between them, as well as the calculation of time in upload of an image and the handling of weed -like, weed-deslike
+    """
     def list(self, user: accounts_models.User):
+        """
+            this method obtains all images upload in public feed 420, the images to show depend on
+            the user's tendency
+
+            :param user: user weedmtach
+            :type user: Model User
+            :return: Model PublicFeed and dict with all id of the PublicFeed
+        """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
         if user.match_sex == accounts_models.User.SEX_OTHER:
@@ -473,6 +676,14 @@ class PublicFeedService:
         return public_feed, public_feed.aggregate(id_public_feed=ArrayAgg('id'))
     
     def public_profile(self, user: accounts_models.User, pk: int)-> accounts_models.User:
+        """
+            Obtain the public profile whose image appeared in the public feed the other user.
+            raise an exception if the profile of the user to search does not exist in the system
+
+            :param user:
+            :param pk:
+            :return:
+       """
         if user is None or user.is_active is False:
             raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
         try:
@@ -482,6 +693,26 @@ class PublicFeedService:
         return public_user
 
     def distances(self, latA: float, lonA: float, latB: float, lonB: float):
+        """
+            Distances method performs a calculation involving the radius of the earth, where the
+            length and length of one point is compared with another and results in the distance
+            between the two points, that distance can be expressed in meters or kilometers depending on
+            the result obtained.
+
+            :param latA: latitude the point A.
+            :type latA: Float.
+            :param lonA: longitude the point A.
+            :type lonA: Float.
+            :param latB: latitude the point B.
+            :type latB: Float.
+            :param lonB: longitude the point B.
+            :type lonB: Float.
+            :return: 999 number and distance in meters if the calcule is less 0.9.
+            :return: if the floating point of the number is greater than 5 the value will be
+            increased to the next number for example if the value is 4.6 then it will be converted to 5.
+            :return:if the floating point of the number is less than 5 the value will be decreased to the
+            number for example if the value is 4.4 then it will be converted to 4.
+        """
         arccos = math.acos(
             ((math.sin(latA) * math.sin(latB)) + (math.cos(latA) * math.cos(latB))) * math.cos(lonA - lonB))
         result = settings.RADIO_EARTH * arccos
@@ -499,15 +730,27 @@ class PublicFeedService:
                 return degrees, str(degrees)[0:1]+" km"
     
     def time_format(self, date_now, date_result):
+        """
+            in this method the result of subtracting the date in which a user uploaded a photo to
+            the public feed 420 is calculated with the time of the server, the time will be formed
+            depending on whether they are seconds, minutes, hour, day after a single week passes
+            it will be shown on the day the month and the year in which the photo was uploaded
+
+            :param date_now: current date with the hour, minute and seconds
+            :type date_now: datetime
+            :param date_result: is the result of subtracting two date
+            :type date_result: datetime.timedelta
+            :return: date format
+        """
         date_string = str(date_result).split(".")[0]
         if len(date_string) == 7:
             if int(date_string[0:1]) >= 1 and int(date_string[0:1]) < 10:
                 return date_string[0:1]+" hours"
             if date_string[2:4] == "00":
                 if int(date_string[5:6]) == 0:
-                    return date_string[6:7]+ " seconds"
+                    return date_string[6:7] + " seconds"
                 else:
-                    return date_string[5:7]+ " seconds"
+                    return date_string[5:7] + " seconds"
             if int(date_string[2:3]) == 0:
                 #print(date_string[3:4])
                 return date_string[3:4] + " minutes"
@@ -527,6 +770,24 @@ class PublicFeedService:
                 return date.strftime("%d the %B")
 
     def distance_feed(self, user: accounts_models.User, latitud: str, longitud: str, datas: list):
+        """
+            this method calls the distance of the method to perform the calculation of the latitude and
+            longitude of the user with the latitude and longitude of the user that will be displayed in
+            the public feed 420 depending on the user's tendency.
+            if the user turns on the gps and sends the latitude and longitude of its current position, the
+            calculation is made based on its position if it is not performed with the one registered at the
+            time of registering in weedmatch.
+
+            :param user: user weedmatch.
+            :type user: Model User.
+            :param latitud: latitude of user if turns on your gps.
+            :type latitud: String.
+            :param longitud: longitude of use if tunds of your gps.
+            :type longitud: String.
+            :param datas: list contain all image upload in public feed 420 depending of user's tendency.
+            :type datas: List.
+            :return: list with the distance.
+        """
         if not latitud:
             latitud = user.latitud
         if not longitud:
@@ -540,7 +801,7 @@ class PublicFeedService:
                 data.pop('latitud')
                 data.pop('longitud')
                 list_accept.append(data)
-            if not distance >= 100: #add userprofile distance user.distance_user
+            if not distance >= user.distance:
                 data['distance'] = str_distance
                 data.pop('latitud')
                 data.pop('longitud')
@@ -549,6 +810,21 @@ class PublicFeedService:
         return list_accept
 
     def distance_user(self, user: accounts_models.User, user_pk: accounts_models.User, latitud: str, longitud: str):
+        """
+            this method performs the calculation between the latitude and longitude recorded in the user who
+            makes the request with the latitude and longitude of the user who is viewing his public profile,
+            this calculation varies depending on whether the user sending the request has turned on his gps.
+
+            :param user: user weedmatch
+            :type user: Model User
+            :param user_pk: user weedmatch
+            :type user_pk: Model User
+            :param latitud: latitude of user if turns on your gps.
+            :type latitud: String.
+            :param longitud: longitude of user if turns on your gps.
+            :type longitud: String.
+            :return: the distance the user who made the visit and the user who is viewing their public profile
+        """
         public_image_user = accounts_models.Image.objects.filter(user_id=user_pk.id).last()
         if not public_image_user:
             return ""
@@ -561,6 +837,19 @@ class PublicFeedService:
         return str_distance
 
     def like_user(self, id_user: int, datas: dict, ids: dict):
+        """
+            In this method, you will search within all the images brought by the list method of the class,
+            if the user in section gave a like to that image and consequently will change the internal
+            flag of the image, so the front will have control of all the like that the user has given.
+
+            :param id_user: id user weedmatch
+            :param datas: serialized information that contains the entire image in the public feed 420
+            depending on the user's distance and current.
+            :type datas: dict.
+            :param ids: id of all PrublicFeed
+            :type ids: dict
+            :return: datas with change the field band
+        """
         like_user = accounts_models.LikeUser.objects.filter(id_user=id_user,
                                                             id_public_feed__in=ids.get('id_public_feed'))
         for list in like_user:

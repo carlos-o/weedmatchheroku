@@ -55,6 +55,7 @@ class ProfileUserSerializers(serpy.Serializer):
     username = serpy.Field() 
     first_name = serpy.Field()
     email = serpy.Field()
+    distance = serpy.MethodField()
     direction = serpy.MethodField()
     description = serpy.MethodField()
     image_profile = serpy.MethodField()
@@ -64,6 +65,11 @@ class ProfileUserSerializers(serpy.Serializer):
     age = serpy.MethodField()
     sex = serpy.Field()
     match_sex = serpy.Field()
+
+    def get_distance(self, obj):
+        if not obj.distance:
+            return ""
+        return str(obj.distance) + " km"
 
     def get_id_user(self, obj):
         return obj.id

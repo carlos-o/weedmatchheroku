@@ -61,3 +61,24 @@ class ProfileUserValidate:
 
     def errors(self):
         return self.validator.errors
+
+
+class ProfileUserDistance:
+    '''
+        validate class to register account
+    '''
+
+    schema = {
+        'distance': {'type': 'integer', 'required': True, 'empty': False, 'min': 2, 'max': 200},
+    }
+
+    def __init__(self, data):
+        self.validator = Validator()
+        self.data = data
+        self.schema = self.__class__.schema
+
+    def validate(self):
+        return self.validator.validate(self.data, self.schema)
+
+    def errors(self):
+        return self.validator.errors

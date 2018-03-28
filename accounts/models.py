@@ -41,6 +41,7 @@ class User(AbstractUser):
     image = models.CharField(_('Photo'), max_length=255, blank=True, null=True)
     count_image = models.IntegerField(_('Count'), default=0, blank=True, null=True)
     direction = models.CharField(_('Direction'), max_length=255, blank=True, null=True)
+    distance = models.IntegerField(_('Distance'), default=100, blank=True, null=True)
     age = models.DateField(_('Age'), null=True, blank=True)
     sex = models.CharField(_('Type_sex'), max_length=10, choices=TYPE_SEX, default=SEX_OTHER, blank=True, null=True)
     latitud = models.DecimalField(_('Latitud'), max_digits=10, decimal_places=6, blank=True, null=True)
@@ -145,6 +146,7 @@ class LikeUser(models.Model):
         else:
             self.like = False
             self.save()
+
 
 class TermsCondition(models.Model):
     title = models.CharField(_('Title'), max_length=50, blank=False, null=False)
