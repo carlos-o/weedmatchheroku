@@ -1,5 +1,6 @@
 from accounts import models as accounts_models
 from cerberus import Validator
+from django.utils.translation import ugettext_lazy as _
 
 
 class RegisterUserValidate:
@@ -30,6 +31,16 @@ class RegisterUserValidate:
     def validate(self):
         return self.validator.validate(self.data, self.schema)
 
+    def change_value(self, data: list)-> list:
+        for i in range(0, len(data)):
+            if data[i][0:15] == "unallowed value":
+                convert = str(data[i])
+                data[i] = str(_(convert[0:15])) + convert[16:]
+            else:
+                convert = str(data[i])
+                data[i] = str(_(convert))
+        return data
+
     def errors(self):
         return self.validator.errors
 
@@ -56,6 +67,16 @@ class ProfileUserValidate:
         self.data = data
         self.schema = self.__class__.schema
 
+    def change_value(self, data: list)-> list:
+        for i in range(0, len(data)):
+            if data[i][0:15] == "unallowed value":
+                convert = str(data[i])
+                data[i] = str(_(convert[0:15])) + convert[16:]
+            else:
+                convert = str(data[i])
+                data[i] = str(_(convert))
+        return data
+
     def validate(self):
         return self.validator.validate(self.data, self.schema)
 
@@ -76,6 +97,12 @@ class ProfileUserDistance:
         self.validator = Validator()
         self.data = data
         self.schema = self.__class__.schema
+
+    def change_value(self, data: list)-> list:
+        for i in range(0, len(data)):
+            convert = str(data[i])
+            data[i] = str(_(convert))
+        return data
 
     def validate(self):
         return self.validator.validate(self.data, self.schema)

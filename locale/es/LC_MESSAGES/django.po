@@ -1,0 +1,440 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-04-02 15:11-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#***********accounts/services.py**************
+#: accounts/services.py:36
+msgid "The username can not be empty"
+msgstr "El nombre de usuario no puede estar vacio"
+
+#: accounts/services.py:38
+msgid "The password can not be empty"
+msgstr "La contraseña no puede estar vacia"
+
+#: accounts/services.py:43
+msgid "The user does not exist in the system"
+msgstr "El usuario no existe en el sistema"
+
+#: accounts/services.py:45
+msgid "Account inactive, or your account is blocked"
+msgstr "Cuenta inactiva, o su cuenta esta bloqueada"
+
+#: accounts/services.py:48
+msgid "Password is invalid, please enter your password correctly"
+msgstr "Contraseña invalida, porfavor escriba correctamente su contraseña"
+
+#: accounts/services.py:62
+msgid "The access_token field can not be empty"
+msgstr "El campo access_token no puede estar vacio"
+
+#: accounts/services.py:64
+msgid "The latitude field can not be empty"
+msgstr "El campo latitud no puede estar vacio"
+
+#: accounts/services.py:66
+msgid "The field length can not be empty"
+msgstr "El campo longitud no puede estar vacio"
+
+#: accounts/services.py:80
+msgid "The access token does not belong to that user"
+msgstr "El token de acceso no pertenece a ese usuario"
+
+#: accounts/services.py:88
+msgid "The username exists, please enter another username"
+msgstr "El nombre de usuario existe, porfavor escriba otro nombre de usuario"
+
+#: accounts/services.py:95
+msgid "The key that was used does not work"
+msgstr "La llave que se utilzo no funciona"
+
+#: accounts/services.py:102
+msgid "The country is not registered in the system"
+msgstr "El pais no esta registrado en el sistema"
+
+#: accounts/services.py:166
+msgid "In order to perform this operation, your account must be active"
+msgstr "Para poder realizar esta operación su cuenta debe estar activa"
+
+#: accounts/services.py:252
+msgid "The old password field can not be empty"
+msgstr "El campo vieja contraseña no puede esta vacio"
+
+#: accounts/services.py:254
+msgid "The new password field can not be empty"
+msgstr "El campo nueva contraseña no puede esta vacio"
+
+#: accounts/services.py:256
+msgid "The password entered does not match your current password"
+msgstr "La contraseña ingresada no coincide con tu actual contraseña"
+
+#: accounts/services.py:258
+msgid "The password must have characters and numbers"
+msgstr "La contraseña debe tener caracteres y numeros"
+
+#: accounts/services.py:280
+msgid "The profile image field can not be empty"
+msgstr "El campo imagen de perfil no puede estar vacio"
+
+#: accounts/services.py:290
+msgid "You can not upload more than 6 images in your profile, you must delete some"
+msgstr "no puedes subir mas de 6 imagenes en tu perfil, debes eliminar alguna"
+
+#: accounts/services.py:312
+msgid "There is no such image on your profile"
+msgstr "no existe esa imagen en tu perfil"
+
+#: accounts/services.py:374
+msgid "The distance field can not be empty"
+msgstr "El campo distancia no puede estar vacio"
+
+#: accounts/services.py:376
+msgid "The distance value can only be numbers"
+msgstr "el valor distancia solo puede ser numeros"
+
+#: accounts/services.py:441
+msgid "The public feed image field can not be empty"
+msgstr "El campo imagen del feed publico no puede estar vacio"
+
+#: accounts/services.py:466
+msgid "An error occurred while saving the image"
+msgstr "Ha ocurrido un error al guardar la imagen"
+
+#: accounts/services.py:486
+msgid "The image does not exist, you can not add a weed-like"
+msgstr "La imagen no existe, no puedes agregarle un weed-like"
+
+#: accounts/services.py:488
+msgid "The like field can not be empty"
+msgstr "El campo like no puede estar vacio"
+
+#: accounts/services.py:505
+msgid "Can not attach a weed-like to the image"
+msgstr "No se puede anexar un weed-like a la imagen"
+
+#: accounts/services.py:524
+msgid "The image does not exist in your public feed or you have already deleted it"
+msgstr "La imagen no existe en tu feed publico o ya la has eliminado"
+
+#: accounts/services.py:551
+msgid "The date field can not be empty"
+msgstr "El campo de fecha no puede estar vacío"
+
+#: accounts/services.py:553
+msgid "The date you entered is not valid"
+msgstr "La fecha que ingresaste no es válida"
+
+#: accounts/services.py:558
+msgid "The day is out of range per month"
+msgstr "El día está fuera de rango por mes"
+
+#: accounts/services.py:568
+msgid "Please enter a valid email address"
+msgstr "Por favor escriba una direccion de correo valida"
+
+#: accounts/services.py:571
+msgid "Mail exists, please enter another email"
+msgstr "El correo existe, porfavor ingresa otro correo"
+
+#: accounts/services.py:605
+msgid "An error occurred while saving the user"
+msgstr "Ha ocurrido un error al guardar el usuario"
+
+#: accounts/services.py:629
+msgid "The mail field can not be empty"
+msgstr "El campo correo no puede estar vacio"
+
+#: accounts/services.py:633
+msgid "The mail is not registered in the system"
+msgstr "El correo no esta registrado en el sistema"
+
+#: accounts/services.py:651
+msgid "The code field can not be empty"
+msgstr "El campo codigo no puede estar vacio"
+
+#: accounts/services.py:657
+msgid "Code you sent does not match the one registered in your account"
+msgstr "Código que enviaste no coinciden con el registrado en tu cuenta"
+#***********accounts/services.py**************
+
+#***********ceeberus/validations.py***********
+msgid "empty values not allowed"
+msgstr "valores vacíos no permitidos"
+
+msgid "min length is 3"
+msgstr "La longitud mínima es 3"
+
+msgid "min length is 6"
+msgstr "La longitud mínima es 6"
+
+msgid "max length is 12"
+msgstr "La longitud maxima es 12"
+
+msgid "max length is 20"
+msgstr "La longitud maxima es 20"
+
+msgid "max length is 30"
+msgstr "La longitud maxima es 30"
+
+msgid "max length is 255"
+msgstr "La longitud maxima es 255"
+
+msgid "must be of string type"
+msgstr "debe ser de tipo cadena"
+
+msgid "unallowed value"
+msgstr "valor no permitido "
+
+msgid "must be of integer type"
+msgstr "debe ser de tipo entero"
+
+msgid "must be of date type"
+msgstr "debe ser del tipo de fecha"
+#***********cerberus/validations.py***********
+
+#***********accounts/views.py****************
+#: accounts/views.py:83
+msgid "You have been disconnected from the system"
+msgstr "Te ha desconectado del sistema"
+
+#: accounts/views.py:115
+msgid "The creation of your account has been successfully completed"
+msgstr "La creacion de tu cuenta se ha realizado con exito"
+
+#: accounts/views.py:133
+msgid "The mail has been sent successfully"
+msgstr "El correo se ha enviado con exito"
+
+#: accounts/views.py:134
+msgid "Server problems could not make the request"
+msgstr "Problemas del servidor no se ha podido realizar la peticion"
+
+#: accounts/views.py:149
+msgid "The password has been successfully changed"
+msgstr "La contraseña se ha cambiado con exito"
+
+#: accounts/views.py:182
+msgid "Your personal information has been successfully edited"
+msgstr "Tu información personal ha sido editada con exito"
+
+#: accounts/views.py:195
+msgid "Your profile image has been successfully changed"
+msgstr "Tu imagen de perfil ha sido cambiada exitosamente"
+
+#: accounts/views.py:220
+msgid "You have successfully uploaded an image to your profile"
+msgstr "Has subido una imagen a tu perfil exitosamente"
+
+#: accounts/views.py:233
+msgid "You have successfully deleted an image of your profile"
+msgstr "Has eliminado una imagen de tu perfil exitosamente"
+
+#: accounts/views.py:262
+msgid "You have edited the user search distance"
+msgstr "Has editado la distancia de busqueda de usuarios"
+
+#: accounts/views.py:318
+msgid "The image has been uploaded to your public profile successfully"
+msgstr "La imagen se ha subido a tu perfil publico con exito"
+
+#: accounts/views.py:330
+msgid "The image has been successfully edited"
+msgstr "Se ha editado la imagen con exito"
+
+#: accounts/views.py:339
+msgid "The image has been successfully deleted from your public profile"
+msgstr "La imagen a sido eliminada con exito de su perfil publico"
+#***********accounts/views.py****************
+
+
+#***********payment/services.py****************
+#: payment/services.py:45
+msgid "The credit card field can not be empty"
+msgstr "El campo tarjeta de credito no puede estas vacio"
+
+#: payment/services.py:48
+msgid "The field of the credit card number only accepts numbers"
+msgstr "El campo del número de tarjeta de crédito solo acepta números"
+
+#: payment/services.py:66
+msgid "This card number is already registered in your account"
+msgstr "Ya esta registrado en tu cuenta ese numero de tarjeta"
+
+#: payment/services.py:73
+msgid "An error occurred while saving the credit card"
+msgstr "Ha ocurrido un error al guardar la tarjeta de credito"
+
+#***********payment/services.py****************
+
+#***********payment/views.py****************
+#: payment/views.py:46
+msgid "You have successfully added a credit card to your account"
+msgstr "Has agregado una tarjeta de credito a tu cuenta con exito"
+
+#: payment/views.py:58
+msgid "Your credit card information has been successfully edited"
+msgstr "La información de tu tarjeta de credito se ha editado con exito"
+
+#: payment/views.py:68
+msgid "The credit card has been successfully deleted from your account"
+msgstr "La tarjeta de credito ha sido eliminada de tu cuenta con exito"
+#***********payment/views.py****************
+
+
+#: accounts/models.py:8
+msgid "Country name"
+msgstr ""
+
+#: accounts/models.py:9
+msgid "Code"
+msgstr ""
+
+#: accounts/models.py:20
+msgid "City name"
+msgstr ""
+
+#: accounts/models.py:34
+msgid "Hombre"
+msgstr ""
+
+#: accounts/models.py:35
+msgid "Mujer"
+msgstr ""
+
+#: accounts/models.py:36
+msgid "Otro"
+msgstr ""
+
+#: accounts/models.py:40
+msgid "Recovery"
+msgstr ""
+
+#: accounts/models.py:41
+msgid "Photo"
+msgstr ""
+
+#: accounts/models.py:42
+msgid "Count"
+msgstr ""
+
+#: accounts/models.py:43
+msgid "Direction"
+msgstr ""
+
+#: accounts/models.py:44
+msgid "Distance"
+msgstr ""
+
+#: accounts/models.py:45
+msgid "Age"
+msgstr ""
+
+#: accounts/models.py:46
+msgid "Type_sex"
+msgstr ""
+
+#: accounts/models.py:47
+msgid "Latitud"
+msgstr ""
+
+#: accounts/models.py:48
+msgid "Longitud"
+msgstr ""
+
+#: accounts/models.py:49 accounts/models.py:153
+msgid "Description"
+msgstr ""
+
+#: accounts/models.py:50
+msgid "Match_sex"
+msgstr ""
+
+#: accounts/models.py:75 accounts/models.py:88 accounts/models.py:106
+msgid "Image"
+msgstr ""
+
+#: accounts/models.py:89 accounts/models.py:107
+msgid "weedy-like"
+msgstr ""
+
+#: accounts/models.py:90 accounts/models.py:108
+msgid "State_image"
+msgstr ""
+
+#: accounts/models.py:91 accounts/models.py:109
+msgid "Latitud_image"
+msgstr ""
+
+#: accounts/models.py:92 accounts/models.py:110
+msgid "Longitud_image"
+msgstr ""
+
+#: accounts/models.py:105
+msgid "Image_id"
+msgstr ""
+
+#: accounts/models.py:135
+msgid "user_id"
+msgstr ""
+
+#: accounts/models.py:136
+msgid "public_feed_id"
+msgstr ""
+
+#: accounts/models.py:152
+msgid "Title"
+msgstr ""
+
+#: payment/models.py:16
+msgid "Visa"
+msgstr ""
+
+#: payment/models.py:17
+msgid "MasterCard"
+msgstr ""
+
+#: payment/models.py:18
+msgid "AmericanExpress"
+msgstr ""
+
+#: payment/models.py:19
+msgid "Maestro"
+msgstr ""
+
+#: payment/models.py:20
+msgid "Discover"
+msgstr ""
+
+#: payment/models.py:24
+msgid "First_name"
+msgstr ""
+
+#: payment/models.py:25
+msgid "Last_name"
+msgstr ""
+
+#: payment/models.py:26
+msgid "Type_Card"
+msgstr ""
+
+#: payment/models.py:27
+msgid "Number_Card"
+msgstr ""
+
+#: payment/models.py:28
+msgid "Code_Security"
+msgstr ""

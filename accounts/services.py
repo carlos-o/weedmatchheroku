@@ -13,6 +13,7 @@ import requests
 import json
 import datetime as datetime_module
 from django.contrib.auth.models import Group
+from django.utils.translation import ugettext_lazy as _
 
 
 class UserService:
@@ -32,18 +33,18 @@ class UserService:
             :raises: ValueError
         """
         if not data.get('username'):
-            raise ValueError('{"detail": "El nombre de usuario no puede estar vacio"}')
+            raise ValueError('{"detail":"'+str(_("The username can not be empty"))+'"}')
         if not data.get('password'):
-            raise ValueError('{"detail": "La contraseña no puede estar vacia"}')
+            raise ValueError('{"detail": "'+str(_("The password can not be empty"))+'"}')
         try:
             user = accounts_models.User.objects.get(Q(username__iexact=data.get('username')) |
                                                     Q(email__iexact=data.get('username')))
         except accounts_models.User.DoesNotExist:
-            raise ValueError('{"detail": "El usuario no existe en el sistema"}')
+            raise ValueError('{"detail":"' + str(_("The user does not exist in the system")) + '"}')
         if not user.is_active:
-            raise ValueError('{"detail": "Cuenta inactiva, su cuenta esta bloqueada"}')
+            raise ValueError('{"detail":"' + str(_("Account inactive, or your account is blocked")) + '"}')
         if not user.check_password(data.get('password')):
-            raise ValueError('{"detail": "Contraseña invalida, porfavor escriba correctamente su contraseña"}')
+            raise ValueError('{"detail":"' + str(_("Password is invalid, please enter your password correctly")) + '"}')
         return user
 
     def login_facebook(self, data: dict)->accounts_models.User:
@@ -58,11 +59,11 @@ class UserService:
             :raises: ValueError
         """
         if not data.get('access_token'):
-            raise ValueError('{"detail": "El campo access_token no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The access_token field can not be empty")) + '"}')
         if not data.get('latitud'):
-            raise ValueError('{"detail": "El campo latitud no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The latitude field can not be empty")) + '"}')
         if not data.get('longitud'):
-            raise ValueError('{"detail": "El campo longitud no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The field length can not be empty")) + '"}')
 
         # Requests to Facebook API
         get_code_url = 'https://graph.facebook.com/oauth/client_code'
@@ -76,7 +77,7 @@ class UserService:
         }
         r = requests.get(graph_api_url, params=params)
         if r.status_code == 400:
-            raise ValueError('{"detail":"El token de acceso no pertenece a ese usuario"}')
+            raise ValueError('{"detail":"' + str(_("The access token does not belong to that user")) + '"}')
         # Data obtained by calling Facebook API with user token
         profile = json.loads(r.text)
         username = profile.get('email').split("@")[0]
@@ -84,21 +85,21 @@ class UserService:
         if user_register.exists():
             return user_register[0]
         if accounts_models.User.objects.filter(username=username).exists():
-            raise ValueError('{"detail":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
+            raise ValueError('{"detail":"' + str(_("The username exists, please enter another username")) + '"}')
 
         # Requests to GoogleMap Api
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_KEY)
         try:
             reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
         except googlemaps.exceptions.ApiError:
-            raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
+            raise ValueError('{"detail":"' + str(_("The key that was used does not work")) + '"}')
         direction = reverse_geocode_result[1].get('formatted_address')
         count = len(reverse_geocode_result) - 1
         country_map = reverse_geocode_result[count].get('formatted_address')
         try:
             country = accounts_models.Country.objects.filter(name=country_map)
         except accounts_models.Country.DoesNotExist:
-            raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
+            raise ValueError('{"detail":"' + str(_("the country is not registered in the system")) + '"}')
         image = profile.get('picture').get('data').get('url')
         age = profile.get('birthday')
         if not age:
@@ -162,7 +163,8 @@ class UserService:
             :raise: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         user.last_login = datetime.now()
         user.save()
         user.auth_token.delete()
@@ -183,7 +185,8 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         user_data = accounts_models.User.objects.filter(id=user.id)
         if user.is_staff:
             user_data = accounts_models.User.objects.all()
@@ -204,19 +207,23 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         validator = accounts_validations.ProfileUserValidate(data)
         if validator.validate() is False:
-            raise ValueError(validator.errors())
+            errors = validator.errors()
+            for value in errors:
+                errors[value] = validator.change_value(errors[value])
+            raise ValueError(errors)
         exists = accounts_models.User.objects.filter(username=data.get('username')).exists()
         if user.username == data.get('username') and exists:
             user.username = data.get('username')
         elif not exists:
             user.username = data.get('username')
         else:
-            raise ValueError('{"username":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
+            raise ValueError('{"username":"' + str(_("The username exists, please enter another username")) + '"}')
         if not accounts_models.Country.objects.filter(id=data.get('country')).exists():
-            raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
+            raise ValueError('{"country":"' + str(_("The country is not registered in the system")) + '"}')
         if data.get('description'):
             user.description = data.get('description')
         if not data.get('last_name'):
@@ -243,15 +250,16 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}') 
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if not data.get('old_password'):
-            raise ValueError('{"detail": "El campo vieja contraseña no puede esta vacio"}')
+            raise ValueError('{"detail":"' + str(_("The old password field can not be empty")) + '"}')
         if not data.get('new_password'):
-            raise ValueError('{"detail": "El campo nueva contraseña no puede esta vacio"}')
+            raise ValueError('{"detail":"' + str(_("The new password field can not be empty")) + '"}')
         if not user.check_password(data.get('old_password')):
-            raise ValueError('{"detail": "La contraseña ingresada no coincide con tu actual contraseña"}')
+            raise ValueError('{"detail":"' + str(_("The password entered does not match your current password")) + '"}')
         if not re.match(r'(?=.*[A-Za-z]+)(?=.*\d+)', data.get('new_password')):
-            raise ValueError('{"detail": "La contraseña debe tener caracteres y numeros"}')
+            raise ValueError('{"detail":"' + str(_("The password must have characters and numbers")) + '"}')
         user.password = make_password(data.get('new_password')) 
         user.save()
         return user
@@ -270,9 +278,10 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}') 
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if not data.get('image'):
-            raise ValueError('{"detail": "El campo imagen de perfil no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The profile image field can not be empty")) + '"}')
         if user.count_image < 6:        
             images_profile = accounts_models.ImageProfile.objects.create(
                 user_id=user.id,
@@ -282,7 +291,8 @@ class ProfileUser:
                 user.assign_image_profile(str(images_profile.image_profile))
             user.count_increment()
         else:
-            raise ValueError('{"detail": "no puedes subir mas de 6 imagenes en el profile"}')
+            raise ValueError('{"detail":"' +
+                             str(_("You can not upload more than 6 images in your profile, you must delete some"))+'"}')
         return user
     
     def delete_images(self, user: accounts_models.User, id_image: int)-> accounts_models.User:
@@ -298,11 +308,12 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         try:
             image = accounts_models.ImageProfile.objects.get(id=id_image, user_id=user.id)
         except accounts_models.ImageProfile.DoesNotExist:
-            raise ValueError('{"detail": "no existe la imagen en tu profile"}')
+            raise ValueError('{"detail":"' + str(_("There is no such image on your profile")) + '"}')
         if user.image == str(image.image_profile):
             user.image = ""
             user.save()
@@ -321,7 +332,8 @@ class ProfileUser:
             :raise: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         images_profile = accounts_models.ImageProfile.objects.filter(user_id=user.id)
         return images_profile
 
@@ -338,11 +350,12 @@ class ProfileUser:
             :raise: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         try:
             image = accounts_models.ImageProfile.objects.get(id=id_image, user_id=user.id)
         except accounts_models.ImageProfile.DoesNotExist:
-            raise ValueError('{"detail": "no existe la imagen en tu profile"}')
+            raise ValueError('{"detail":"' + str(_("There is no such image on your profile")) + '"}')
         user.assign_image_profile(str(image.image_profile))
         return user
 
@@ -359,15 +372,19 @@ class ProfileUser:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"user": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"user":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if not data.get('distance'):
-            raise ValueError('{"distance":"el campo distance no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The distance field can not be empty")) + '"}')
         if not re.match("[0-9]+", data.get("distance")):
-            raise ValueError('{"distance":"el valor distancia solo puede ser numeros"}')
+            raise ValueError('{"detail":"' + str(_("The distance value can only be numbers")) + '"}')
         data["distance"] = int(data.get("distance"))
         validator = accounts_validations.ProfileUserDistance(data)
         if validator.validate() is False:
-            raise ValueError(validator.errors())
+            errors = validator.errors()
+            for value in errors:
+                errors[value] = validator.change_value(errors[value])
+            raise ValueError(errors)
         user.distance = data.get('distance')
         user.save()
         return user
@@ -388,7 +405,8 @@ class UploadImagePublicProfileService:
             :raise: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if user.is_staff:
             images = accounts_models.PublicFeed.objects.all()
         else:
@@ -407,7 +425,8 @@ class UploadImagePublicProfileService:
             :raise: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         images = accounts_models.PublicFeed.objects.filter(user_id=pk)
         return images
 
@@ -423,9 +442,10 @@ class UploadImagePublicProfileService:
             :raises: ValueError
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if not data.get('image'):
-            raise ValueError('{"detail": "El campo imagen del feed publico no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The public feed image field can not be empty")) + '"}')
         if not data.get('comment'):
             data['comment'] = ""
         if not data.get('latitud'):
@@ -450,7 +470,7 @@ class UploadImagePublicProfileService:
                 date_creation=public_image.created
             )
         except Exception as e:
-            raise ValueError('{"detail": "ha ocurrido un error al guardar la imagen"}')
+            raise ValueError('{"detail":"' + str(_("An error occurred while saving the image")) + '"}')
         return public_image
 
     def update(self, user: accounts_models.User, data: dict, id_image: int, id_user: int)->accounts_models.PublicFeed:
@@ -464,15 +484,15 @@ class UploadImagePublicProfileService:
             :param id_user: id of another user
             :return:
         """
-        print(data)
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         try:
             imagen = accounts_models.PublicFeed.objects.get(id_image=id_image, user_id=id_user)
         except accounts_models.Image.DoesNotExist:
-            raise ValueError('{"detail": "La imagen no existe no puedes agregarle un weed-like"}')
+            raise ValueError('{"detail":"' + str(_("The image does not exist, you can not add a weed-like")) + '"}')
         if not data.get('like'):
-            raise ValueError('{"detail": "el campo like no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The like field can not be empty")) + '"}')
         if data.get('like') == "True" or data.get('like') == "true":
             imagen.increment_like()
             try:
@@ -489,7 +509,7 @@ class UploadImagePublicProfileService:
             like_user = accounts_models.LikeUser.objects.get(id_user=user.id, id_public_feed=imagen.id)
             like_user.change_like(False)
         if not re.search(r'^(true|True|false|False)$', data.get('like')):
-            raise ValueError('{"detail":"No se puede anexar un nuevo me gusta a la imagen publica"}')
+            raise ValueError('{"detail":"' + str(_("Can not attach a weed-like to the image")) + '"}')
         return imagen
 
     def delete(self, user: accounts_models.User, id_image: int)-> bool:
@@ -503,11 +523,13 @@ class UploadImagePublicProfileService:
             :return: True
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         try:
             imagen = accounts_models.Image.objects.get(id=id_image, user_id=user.id)
         except accounts_models.Image.DoesNotExist:
-            raise ValueError('{"detail": "La imagen no existe en tu feed publico o ya la has eliminado"}')
+            raise ValueError('{"detail":"' +
+                             str(_("The image does not exist in your public feed or you have already deleted it"))+'"}')
         #os.remove(os.path.join(settings.MEDIA_ROOT, str(imagen.image.name)))
         imagen.delete()
         return True
@@ -533,26 +555,28 @@ class RegisterUserService:
         #validation of the date birth date
         date = data['age'][:10]
         if not date and not data.get('age'):
-            raise ValueError('{"age": "El campo de fecha no puede estar vacio"}')
+            raise ValueError('{"age":"' + str(_("The date field can not be empty")) + '"}')
         match = re.match(r'([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))', date)
         if not match:
-            raise ValueError('{"age": "No es una fecha valida"}')
+            raise ValueError('{"age":"' + str(_("The date you entered is not valid")) + '"}')
         try:
             data['age'] = datetime.strptime(date, '%Y-%m-%d')
         except Exception as e:
-            raise ValueError('{"age": "el día está fuera de rango por mes"}')
+            raise ValueError('{"age":"' + str(_("The day is out of range per month")) + '"}')
         validator = accounts_validations.RegisterUserValidate(data)
         if validator.validate() is False:
-            print(validator.errors())
-            raise ValueError(validator.errors())
+            errors = validator.errors()
+            for value in errors:
+                errors[value] = validator.change_value(errors[value])
+            raise ValueError(errors)
         #validation for the username
         if accounts_models.User.objects.filter(username=data.get('username')).exists():
-            raise ValueError('{"username":"El nombre de usuario existe, porfavor escriba otro nombre de usuario"}')
+            raise ValueError('{"username":"' + str(_("The username exists, please enter another username")) + '"}')
         #validation for the email
         if not re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', data.get('email')):
-            raise ValueError('{"email":"por favor escriba una direccion de correo valida"}')
+            raise ValueError('{"email":"' + str(_("Please enter a valid email address")) + '"}')
         if accounts_models.User.objects.filter(email=data.get('email')).exists():
-            raise ValueError('{"email":"El correo existe, porfavor escriba otro correo"}')
+            raise ValueError('{"email":"' + str(_("Mail exists, please enter another email")) + '"}')
         """
         necesito para la api en produccion el googlemaps api key del cliente
         """
@@ -561,7 +585,7 @@ class RegisterUserService:
         try:
             reverse_geocode_result = gmaps.reverse_geocode((float(data.get('latitud')), float(data.get('longitud'))))
         except googlemaps.exceptions.ApiError:
-            raise ValueError('{"detail": "La llave que se utilzo no funciona"}')
+            raise ValueError('{"googlemaps": "'+str(_("The key that was used does not work"))+'"}')
         if len(reverse_geocode_result) == 1:
             direction = reverse_geocode_result[0].get('formatted_address')
             for lists in reverse_geocode_result[0].get('address_components'):
@@ -575,7 +599,7 @@ class RegisterUserService:
             try:
                 country = accounts_models.Country.objects.filter(name=country_map)
             except accounts_models.Country.DoesNotExist:
-                raise ValueError('{"country": "el pais no esta registrado en el sistema"}')
+                raise ValueError('{"country":"' + str(_("The country is not registered in the system")) + '"}')
         user = accounts_models.User()
         data["country_id"] = country[0].id
         data["direction"] = direction
@@ -587,7 +611,7 @@ class RegisterUserService:
         try:
             user.save(force_insert=True)
         except Exception as e:
-            raise ValueError('{"user": "ha ocurrido un error al guardar el usuario"}')
+            raise ValueError('{"user":"' + str(_("An error occurred while saving the user")) + '"}')
         print(user)
         # add group weedmatch
         group = Group.objects.get(name='WeedMatch')
@@ -611,13 +635,14 @@ class RecoverPasswordService:
             :raises: ValueError
         """
         if not data.get('email'):
-            raise ValueError('{"detail": "el campo correo no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The mail field can not be empty")) + '"}')
         try:
             user = accounts_models.User.objects.get(email=data.get('email'))
         except accounts_models.User.DoesNotExist:
-            raise ValueError('{"detail": "el correo no esta registrado en el sistema"}')
+            raise ValueError('{"detail":"' + str(_("The mail is not registered in the system")) + '"}')
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         return user
 
     def check_code(self, data: dict) -> accounts_models.User:
@@ -632,15 +657,17 @@ class RecoverPasswordService:
             :raises: ValueError
         """
         if not data.get('code'):
-            raise ValueError('{"detail": "El campo codigo no puede estar vacio"}')
+            raise ValueError('{"detail":"' + str(_("The code field can not be empty")) + '"}')
         if not data.get('password'):
-            raise ValueError('{"detail": "El campo contraseña no puede estat vacio"}')
+            raise ValueError('{"detail":"' + str(_("The password can not be empty")) + '"}')
         try:
             user = accounts_models.User.objects.get(recovery=str(data.get('code')))
         except accounts_models.User.DoesNotExist:
-            raise ValueError('{"detail": "Código que enviaste no coinciden con el registrado en tu cuenta"}')
+            raise ValueError('{"detail":"' +
+                             str(_("Code you sent does not match the one registered in your account")) + '"}')
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         user.password = make_password(str(data.get('password')))
         user.recovery = ''
         user.save()
@@ -662,7 +689,8 @@ class PublicFeedService:
             :return: Model PublicFeed and dict with all id of the PublicFeed
         """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver la información su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         if user.match_sex == accounts_models.User.SEX_OTHER:
             users = accounts_models.User.objects.all().exclude(username=user.username).exclude(is_superuser=True)
         if user.match_sex == accounts_models.User.SEX_MALE:
@@ -685,11 +713,12 @@ class PublicFeedService:
             :return:
        """
         if user is None or user.is_active is False:
-            raise ValueError('{"detail": "para poder ver su informacion su cuenta debe estar activa"}')
+            raise ValueError('{"detail":"' +
+                             str(_("In order to perform this operation, your account must be active")) + '"}')
         try:
             public_user = accounts_models.User.objects.get(id=pk)
         except accounts_models.User.DoesNotExist:
-            raise ValueError('{"detail": "el usuario no se encuentra registrado en el sistema"}')
+            raise ValueError('{"detail":"' + str(_("The user does not exist in the system")) + '"}')
         return public_user
 
     def distances(self, latA: float, lonA: float, latB: float, lonB: float):

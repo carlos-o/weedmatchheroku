@@ -19,6 +19,7 @@ import json
 from datetime import datetime
 from datetime import timedelta
 from weedmatch import settings
+from django.utils.translation import ugettext_lazy as _
 
 
 class CreditCardViewSet(viewsets.ModelViewSet):
@@ -41,9 +42,8 @@ class CreditCardViewSet(viewsets.ModelViewSet):
             card = service.create(request.data, request.user)
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = self.get_serializer(card, many=False).data
-        serializer['detail'] = 'La tarjeta de credito se ha agregado a tu cuenta con exito'
+        serializer['detail'] = str(_("You have successfully added a credit card to your account"))
         return Response(serializer, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
@@ -55,7 +55,7 @@ class CreditCardViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(card, many=False).data
-        serializer['detail'] = 'La información de la tarjeta de credito se ha editado con exito'
+        serializer['detail'] = str(_("Your credit card information has been successfully edited"))
         return Response(serializer, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
@@ -65,4 +65,5 @@ class CreditCardViewSet(viewsets.ModelViewSet):
             card = service.delete(instance, request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status)
-        return Response({"detail": "la tarjeta de credito ha sido eliminada de tu cuenta con exito"}, status=status.HTTP_200_OK)
+        return Response({"detail": str(_("The credit card has been successfully deleted from your account"))},
+                        status=status.HTTP_200_OK)

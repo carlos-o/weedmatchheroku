@@ -11,6 +11,24 @@ from weedmatch import settings
 def code_generator(size=20, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
+def welcome(user, request):
+    try:
+        to = user.email
+        data = {'msg': 'Welcome to WeedMatch',
+                'username': user.username,
+                'url': settings.URL,
+                }
+        subject, from_email = data['msg'], EMAIL_HOST_USER
+        text_content = render_to_string("email/welcome.html", data)
+        html_content = render_to_string("email/welcome.html", data)
+        send = EmailMultiAlternatives(subject, text_content, from_email, [to],
+                                      headers={'From': 'WeedMatch <' + from_email + '>',
+                                               'Reply-to': 'WeedMatch <' + from_email + '>'})
+        send.attach_alternative(html_content, "text/html")
+        send.send()
+        return True
+    except:
+        return False
 
 def recover_password(user, request):
     try:

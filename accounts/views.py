@@ -17,6 +17,7 @@ from accounts import serializers as accounts_serializers
 from accounts import services as accounts_services
 from accounts import tasks as accounts_tasks
 from notifications import views as notifications_views
+from django.utils.translation import ugettext_lazy as _
 #from account import permissions as accounts_permissions
 import re
 import base64
@@ -79,7 +80,7 @@ class LogoutView(APIView):
             user = service.logut(request.user)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
-        return Response({'detail': 'Te has desconectado del sistema'}, status=status.HTTP_200_OK)
+        return Response({'detail': str(_('You have been disconnected from the system'))}, status=status.HTTP_200_OK)
     
 
 class CountryView(APIView):
@@ -106,13 +107,14 @@ class RegisterView(APIView):
     permission_classes = (permissions.AllowAny,)
     
     def post(self, request):
-        print(request.data)
         register = accounts_services.RegisterUserService()
         try:
             data = register.create(request.data) 
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "la creacion de tu cuenta se ha realizado con exito"},
+        if not notifications_views.welcome(data, request):
+            print("the email cant not send")
+        return Response({"detail": str(_("The creation of your account has been successfully completed"))},
                         status=status.HTTP_201_CREATED)
 
 
@@ -130,8 +132,8 @@ class RequestRecoverPassword(APIView):
         if notifications_views.recover_password(user, request):
             expire = datetime.now() + timedelta(minutes=10)
             accounts_tasks.disable_code_recovery_password.apply_async(args=[user.id], eta=expire)
-            return Response({'detail': 'el correo se ha enviado con exito'}, status=status.HTTP_200_OK)
-        return Response({'detail': 'Problemas del servidor no se ha podido realizar la peticion'},
+            return Response({'detail': str(_("The mail has been sent successfully"))}, status=status.HTTP_200_OK)
+        return Response({'detail': str(_("Server problems could not make the request"))},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -146,7 +148,7 @@ class RecoverPassword(APIView):
             user = recover.check_code(request.data)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
-        return Response({'detail': 'La contraseña se ha cambiado con exito'}, status=status.HTTP_200_OK)
+        return Response({'detail': str(_("The password has been successfully changed"))}, status=status.HTTP_200_OK)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -179,7 +181,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(profile, many=False).data
-        serializer['detail'] = 'Tu información personal ha sido editada con exito'
+        serializer['detail'] = str(_("Your personal information has been successfully edited"))
         return Response(serializer, status=status.HTTP_200_OK)
     
     @detail_route(methods=['put'], url_path='assign-image/(?P<id_image>[0-9]+)',
@@ -192,7 +194,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(profile, many=False).data
-        serializer['detail'] = 'Tu imagen de perfil ha sido cambiada exitosamente'
+        serializer['detail'] = str(_("Your profile image has been successfully changed"))
         return Response(serializer, status=status.HTTP_200_OK)
     
     @detail_route(methods=['get'], url_path='assign-image',
@@ -217,7 +219,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(user, many=False).data
-        serializer['detail'] = 'Has subido una imagen a tu perfil exitosamente'
+        serializer['detail'] = str(_("You have successfully uploaded an image to your profile"))
         return Response(serializer, status=status.HTTP_201_CREATED)
 
     @detail_route(methods=['delete'], url_path='delete-image/(?P<id_image>[0-9]+)',
@@ -230,7 +232,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(user, many=False).data
-        serializer['detail'] = 'Se ha eliminado una imagen de tu perfil exitosamente'
+        serializer['detail'] = str(_("You have successfully deleted an image of your profile"))
         return Response(serializer, status=status.HTTP_200_OK)
 
     @detail_route(methods=['put'], url_path='change-password',
@@ -244,7 +246,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         profile.auth_token.delete()
         token, created = Token.objects.get_or_create(user=profile)
-        return Response({'detail': 'Su contraseña ha sido cambiada exitosamente',
+        return Response({'detail': str(_("The password has been successfully changed")),
                          'token': token.key,
                          'id': profile.id,
                          'username': profile.username, 
@@ -259,8 +261,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             user = service.update_distance(instance, request.data)
         except Exception as e:
             return Response({"detail": json.loads(str(e).replace("'", '"'))}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "has editado la distancia de busqueda de usuarios", "distance": user.distance},
-                        status=status.HTTP_201_CREATED)
+        return Response({"detail": str(_("You have edited the user search distance")), "distance": user.distance},
+                        status=status.HTTP_200_OK)
 
 
 class PublicProfileView(APIView):
@@ -315,7 +317,7 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = accounts_serializers.ImagePublicSerializer(image, many=False).data
-        serializer['detail'] = "La imagen se ha subido a tu profile publico con exito"
+        serializer['detail'] = str(_("The image has been uploaded to your public profile successfully"))
         return Response(serializer, status=status.HTTP_201_CREATED)
 
     @detail_route(methods=['put'], url_path='like/(?P<id_user>[0-9]+)',
@@ -327,7 +329,7 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
         serializer = accounts_serializers.ImagePublicSerializer(image, many=False).data
-        serializer['detail'] = "se ha editado la imagen con exito"
+        serializer['detail'] = str(_("The image has been successfully edited"))
         return Response(serializer, status=status.HTTP_200_OK)
 
     def destroy(self, request, pk=None):
@@ -336,7 +338,7 @@ class PublicProfileImagesViewSet(viewsets.ViewSet):
             image = service.delete(request.user, pk)
         except Exception as e:
             return Response(json.loads(str(e)), status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "La imagen a sido borrada con exito de su perfil publico"},
+        return Response({"detail": str(_("The image has been successfully deleted from your public profile"))},
                         status=status.HTTP_200_OK)
 
 

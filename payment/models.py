@@ -3,7 +3,9 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class CreditCard(models.Model):
-
+    """
+        model class to store the credit card information for all user in weedmatch.
+    """
     CARD_VISA = "visa"
     CARD_MASTER = "mastercard"
     CARD_AMERICAN = "americanexpress"
@@ -32,4 +34,7 @@ class CreditCard(models.Model):
         ordering = ['id']
 
     def __str__(self):
+        """
+            :return: the id of credit card
+        """
         return str(self.id)
